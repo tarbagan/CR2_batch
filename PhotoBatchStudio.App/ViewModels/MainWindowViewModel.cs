@@ -1,10 +1,12 @@
 using System.ComponentModel;
+using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Media.Imaging;
+using System.Windows.Interop;
 using PhotoBatchStudio.App.Models;
 using PhotoBatchStudio.App.Services;
 using WpfMessageBox = System.Windows.MessageBox;
@@ -16,7 +18,7 @@ using Forms = System.Windows.Forms;
 
 namespace PhotoBatchStudio.App.ViewModels;
 
-public sealed class MainWindowViewModel : ObservableObject
+public sealed partial class MainWindowViewModel : ObservableObject
 {
     private enum UiLanguage
     {
@@ -32,6 +34,8 @@ public sealed class MainWindowViewModel : ObservableObject
 
     private readonly IPhotoBatchService _photoBatchService;
     private readonly List<SortPhotoItem> _selectedSortPhotos = [];
+    private readonly List<SortPhotoItem> _selectedFinalSortPhotos = [];
+    private readonly ConcurrentDictionary<string, BitmapImage?> _thumbnailCache = new(StringComparer.OrdinalIgnoreCase);
 
     private string? _xmpPresetPath;
     private string _outputFolder = string.Empty;
@@ -50,10 +54,12 @@ public sealed class MainWindowViewModel : ObservableObject
     private bool _useExternalAi;
     private bool _renderRawWithPhotoshop = true;
     private bool _isProcessing;
+    private bool _isLoadingSortPhotos;
     private bool _showSettings;
     private UiLanguage _language = UiLanguage.Russian;
     private PhotoFileItem? _selectedFile;
     private SortPhotoItem? _selectedSortPhoto;
+    private SortPhotoItem? _selectedFinalSortPhoto;
     private double _previewZoom = 1.0;
     private string _sortMode = "name_asc";
     private string _projectFilePath = string.Empty;
@@ -65,6 +71,7 @@ public sealed class MainWindowViewModel : ObservableObject
     private double _previewViewportHeight = 600;
     private FileSystemWatcher? _sortFolderWatcher;
     private CancellationTokenSource? _sortFolderRefreshCts;
+    private HashSet<string>? _pendingFinalSelectionPaths;
 
     public MainWindowViewModel()
         : this(new PhotoBatchService())
@@ -76,6 +83,7 @@ public sealed class MainWindowViewModel : ObservableObject
         _photoBatchService = photoBatchService;
         Files = new ObservableCollection<PhotoFileItem>();
         SortPhotos = new ObservableCollection<SortPhotoItem>();
+        FinalSortPhotos = new ObservableCollection<SortPhotoItem>();
         SortModes = new ObservableCollection<SortModeOption>();
 
         AddFilesCommand = new RelayCommand(_ => AddFiles(), _ => !_isProcessing);
@@ -91,24 +99,23 @@ public sealed class MainWindowViewModel : ObservableObject
         SwitchToRussianCommand = new RelayCommand(_ => SwitchLanguage(UiLanguage.Russian), _ => _language != UiLanguage.Russian);
         SwitchToEnglishCommand = new RelayCommand(_ => SwitchLanguage(UiLanguage.English), _ => _language != UiLanguage.English);
         StartProcessingCommand = new RelayCommand(async _ => await StartProcessingAsync(), _ => CanStartProcessing());
-        LoadSortPhotosCommand = new RelayCommand(_ => LoadSortPhotos(), _ => Directory.Exists(GetActiveSortSourceFolder()));
-        RefreshSortPhotosCommand = new RelayCommand(_ => LoadSortPhotos(), _ => Directory.Exists(GetActiveSortSourceFolder()));
+        LoadSortPhotosCommand = new RelayCommand(_ => _ = LoadSortPhotosAsync(), _ => Directory.Exists(GetActiveSortSourceFolder()) && !_isLoadingSortPhotos);
+        RefreshSortPhotosCommand = new RelayCommand(_ => _ = LoadSortPhotosAsync(), _ => Directory.Exists(GetActiveSortSourceFolder()) && !_isLoadingSortPhotos);
         OpenSortFolderCommand = new RelayCommand(_ => OpenFolder(GetActiveSortSourceFolder()), _ => Directory.Exists(GetActiveSortSourceFolder()));
         MarkCurrentForFinalCommand = new RelayCommand(_ => MarkCurrentForFinal(), _ => SelectedSortPhoto is not null);
         UnmarkCurrentForFinalCommand = new RelayCommand(_ => UnmarkCurrentForFinal(), _ => SelectedSortPhoto is not null);
-        SelectAllSortPhotosCommand = new RelayCommand(_ => SelectAllSortPhotos(), _ => SortPhotos.Count > 0);
-        ClearSortSelectionCommand = new RelayCommand(_ => ClearSortSelection(), _ => SortPhotos.Any(item => item.IsSelectedForFinal));
         DeleteSelectedSortPhotosCommand = new RelayCommand(_ => DeleteSelectedSortPhotos(), _ => _selectedSortPhotos.Count > 0);
-        SendToFinalFolderCommand = new RelayCommand(_ => SendToFinalFolder(), _ => CanSendToFinalFolder());
         SaveProjectCommand = new RelayCommand(_ => SaveProject());
         LoadProjectCommand = new RelayCommand(_ => LoadProject());
 
         InitializeTexts();
+        InitializePostprocessState();
         UpdateSortModes();
     }
 
     public ObservableCollection<PhotoFileItem> Files { get; }
     public ObservableCollection<SortPhotoItem> SortPhotos { get; }
+    public ObservableCollection<SortPhotoItem> FinalSortPhotos { get; }
     public ObservableCollection<SortModeOption> SortModes { get; }
 
     public RelayCommand AddFilesCommand { get; }
@@ -129,10 +136,7 @@ public sealed class MainWindowViewModel : ObservableObject
     public RelayCommand OpenSortFolderCommand { get; }
     public RelayCommand MarkCurrentForFinalCommand { get; }
     public RelayCommand UnmarkCurrentForFinalCommand { get; }
-    public RelayCommand SelectAllSortPhotosCommand { get; }
-    public RelayCommand ClearSortSelectionCommand { get; }
     public RelayCommand DeleteSelectedSortPhotosCommand { get; }
-    public RelayCommand SendToFinalFolderCommand { get; }
     public RelayCommand SaveProjectCommand { get; }
     public RelayCommand LoadProjectCommand { get; }
 
@@ -163,8 +167,23 @@ public sealed class MainWindowViewModel : ObservableObject
         }
     }
 
+    public SortPhotoItem? SelectedFinalSortPhoto
+    {
+        get => _selectedFinalSortPhoto;
+        set
+        {
+            if (SetProperty(ref _selectedFinalSortPhoto, value))
+            {
+                UpdateSelectedPreviewImage();
+                RaisePropertyChanged(nameof(SelectedPreviewImage));
+                RaisePropertyChanged(nameof(SelectedPreviewName));
+                RefreshCommands();
+            }
+        }
+    }
+
     public BitmapImage? SelectedPreviewImage => _selectedPreviewImage;
-    public string SelectedPreviewName => SelectedSortPhoto?.FileName ?? T("\u0424\u043e\u0442\u043e \u043d\u0435 \u0432\u044b\u0431\u0440\u0430\u043d\u043e", "No photo selected");
+    public string SelectedPreviewName => GetPreviewTargetPhoto()?.FileName ?? T("\u0424\u043e\u0442\u043e \u043d\u0435 \u0432\u044b\u0431\u0440\u0430\u043d\u043e", "No photo selected");
 
     public double PreviewZoom
     {
@@ -199,7 +218,13 @@ public sealed class MainWindowViewModel : ObservableObject
             if (SetProperty(ref _outputFolder, value))
             {
                 RaisePropertyChanged(nameof(EffectiveSortFolder));
+                RaisePropertyChanged(nameof(SortFolderHintText));
                 ResetSortFolderWatcher();
+                _ = LoadSortPhotosAsync();
+                if (string.IsNullOrWhiteSpace(PostprocessSourceFolder))
+                {
+                    _ = LoadPostprocessFilesAsync(allowAutoProcess: false);
+                }
                 RefreshCommands();
             }
         }
@@ -213,7 +238,9 @@ public sealed class MainWindowViewModel : ObservableObject
             if (SetProperty(ref _sortFolder, value))
             {
                 RaisePropertyChanged(nameof(EffectiveSortFolder));
+                RaisePropertyChanged(nameof(SortFolderHintText));
                 ResetSortFolderWatcher();
+                _ = LoadSortPhotosAsync();
                 RefreshCommands();
             }
         }
@@ -340,6 +367,7 @@ public sealed class MainWindowViewModel : ObservableObject
     }
 
     public int SelectedSortPhotosCount => _selectedSortPhotos.Count;
+    public int SelectedFinalSortPhotosCount => _selectedFinalSortPhotos.Count;
     public double PreviewDisplayWidth
     {
         get
@@ -389,7 +417,7 @@ public sealed class MainWindowViewModel : ObservableObject
     public string SaveProjectText => T("\u0421\u043e\u0445\u0440\u0430\u043d\u0438\u0442\u044c \u043f\u0440\u043e\u0435\u043a\u0442", "Save Project");
     public string LoadProjectText => T("\u0417\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044c \u043f\u0440\u043e\u0435\u043a\u0442", "Load Project");
     public string StartBatchText => T("\u0420\u0435\u043d\u0434\u0435\u0440", "Render");
-    public string QueueTabText => T("\u041e\u0447\u0435\u0440\u0435\u0434\u044c", "Queue");
+    public string QueueTabText => T("\u0428\u0430\u0433 1. \u041e\u0431\u0440\u0430\u0431\u043e\u0442\u043a\u0430 \u043f\u0440\u0435\u0441\u0435\u0442\u043e\u043c", "Step 1. Preset processing");
     public string ReviewTabText => T("\u0421\u043e\u0440\u0442\u0438\u0440\u043e\u0432\u043a\u0430", "Review");
     public string BatchQueueText => T("\u041e\u0447\u0435\u0440\u0435\u0434\u044c \u0438\u0441\u0445\u043e\u0434\u043d\u0438\u043a\u043e\u0432", "Source Queue");
     public string ReviewPanelText => T("\u0421\u043e\u0440\u0442\u0438\u0440\u043e\u0432\u043a\u0430 JPG", "JPG Review");
@@ -406,7 +434,9 @@ public sealed class MainWindowViewModel : ObservableObject
         "\u0421\u044e\u0434\u0430 \u0441\u043e\u0445\u0440\u0430\u043d\u044f\u044e\u0442\u0441\u044f JPG \u043f\u043e\u0441\u043b\u0435 \u0440\u0435\u043d\u0434\u0435\u0440\u0430 \u0438\u043b\u0438 \u0444\u0430\u0439\u043b\u044b \u043f\u043e\u0441\u043b\u0435 \u043f\u0430\u043a\u0435\u0442\u043d\u043e\u0439 \u043e\u0431\u0440\u0430\u0431\u043e\u0442\u043a\u0438.",
         "Rendered JPGs and processed files are saved here.");
     public string SortFolderText => T("\u041f\u0430\u043f\u043a\u0430 review (\u043e\u043f\u0446\u0438\u043e\u043d\u0430\u043b\u044c\u043d\u043e)", "Review folder (optional)");
-    public string SortFolderHintText => T("\u0415\u0441\u043b\u0438 \u043f\u0443\u0441\u0442\u043e, \u0438\u0441\u043f\u043e\u043b\u044c\u0437\u0443\u0435\u0442\u0441\u044f Out.", "If empty, the Out folder is used.");
+    public string SortFolderHintText => T(
+        $"Удалите ненужные JPG из папки {EffectiveSortFolder}.",
+        $"Remove unnecessary JPG files from {EffectiveSortFolder}.");
     public string FinalFolderText => T("\u0424\u0438\u043d\u0430\u043b\u044c\u043d\u0430\u044f \u043f\u0430\u043f\u043a\u0430", "Final folder");
     public string FinalFolderTooltip => T(
         "\u0412 \u044d\u0442\u0443 \u043f\u0430\u043f\u043a\u0443 \u043a\u043e\u043f\u0438\u0440\u0443\u044e\u0442\u0441\u044f \u0442\u043e\u043b\u044c\u043a\u043e \u043e\u0442\u043e\u0431\u0440\u0430\u043d\u043d\u044b\u0435 \u0444\u0438\u043d\u0430\u043b\u044c\u043d\u044b\u0435 JPG \u043f\u043e\u0441\u043b\u0435 review.",
@@ -438,15 +468,14 @@ public sealed class MainWindowViewModel : ObservableObject
     public string SendToFinalTooltip => T(
         "\u041a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u043e\u0442\u043c\u0435\u0447\u0435\u043d\u043d\u044b\u0435 \u043a\u0430\u0434\u0440\u044b \u0432 \u0444\u0438\u043d\u0430\u043b\u044c\u043d\u0443\u044e \u043f\u0430\u043f\u043a\u0443. \u042d\u0442\u043e \u0438\u0442\u043e\u0433\u043e\u0432\u044b\u0439 \u0448\u0430\u0433 \u043e\u0442\u0431\u043e\u0440\u0430.",
         "Copy selected final photos into the final folder. This is the last review step.");
-    public string SelectAllText => T("\u0412\u044b\u0431\u0440\u0430\u0442\u044c \u0432\u0441\u0435", "Select All");
-    public string ClearSelectionText => T("\u0421\u043d\u044f\u0442\u044c \u0432\u044b\u0431\u043e\u0440", "Clear Selection");
     public string KeepText => T("\u041e\u0442\u043c\u0435\u0442\u0438\u0442\u044c \u043a\u0430\u043a \u0444\u0438\u043d\u0430\u043b", "Mark For Final");
     public string UnkeepText => T("\u0423\u0431\u0440\u0430\u0442\u044c \u0438\u0437 \u0444\u0438\u043d\u0430\u043b\u0430", "Remove From Final");
     public string RemoveFromReviewText => T("\u0423\u0431\u0440\u0430\u0442\u044c \u0438\u0437 review", "Remove From Review");
+    public string RemoveFromPostprocessText => T("\u0423\u0434\u0430\u043b\u0438\u0442\u044c \u0438\u0437 постобработки", "Remove From Postprocess");
     public string ZoomText => T("\u0417\u0443\u043c", "Zoom");
     public string SortModeText => T("\u0421\u043e\u0440\u0442\u0438\u0440\u043e\u0432\u043a\u0430", "Sort");
     public string CurrentProjectText => T("\u0422\u0435\u043a\u0443\u0449\u0438\u0439 \u043f\u0440\u043e\u0435\u043a\u0442", "Current project");
-    public string FinalSelectionCountText => T($"\u041e\u0442\u043e\u0431\u0440\u0430\u043d\u043e: {SortPhotos.Count(item => item.IsSelectedForFinal)}", $"Selected: {SortPhotos.Count(item => item.IsSelectedForFinal)}");
+    public string FinalSelectionCountText => T($"\u041e\u0442\u043e\u0431\u0440\u0430\u043d\u043e: {FinalSortPhotos.Count}", $"Selected: {FinalSortPhotos.Count}");
     public string QueueProgressText => T("\u041f\u0440\u043e\u0433\u0440\u0435\u0441\u0441", "Progress");
     public string ReviewSelectionText => T($"\u0412\u044b\u0431\u0440\u0430\u043d\u043e \u0432 review: {SelectedSortPhotosCount}", $"Selected in review: {SelectedSortPhotosCount}");
 
@@ -487,12 +516,20 @@ public sealed class MainWindowViewModel : ObservableObject
             nameof(OverwriteXmpText), nameof(DetectBlurText), nameof(AutoFixBlurText), nameof(RenderRawText),
             nameof(UseExternalAiText), nameof(NameColumnText), nameof(FolderColumnText), nameof(TypeColumnText),
             nameof(StatusColumnText), nameof(SaveProjectText), nameof(LoadProjectText), nameof(LanguageText),
-            nameof(LoadJpgsText), nameof(RefreshListText), nameof(RefreshListTooltip), nameof(OpenFolderText), nameof(SendToFinalText), nameof(SendToFinalTooltip), nameof(SelectAllText),
-            nameof(ClearSelectionText), nameof(KeepText), nameof(UnkeepText), nameof(RemoveFromReviewText), nameof(ZoomText),
+            nameof(LoadJpgsText), nameof(RefreshListText), nameof(RefreshListTooltip), nameof(OpenFolderText), nameof(RemoveFromReviewText), nameof(ZoomText),
+            nameof(RemoveFromPostprocessText),
             nameof(SortModeText), nameof(CurrentProjectText), nameof(CurrentProjectPath), nameof(FinalSelectionCountText),
             nameof(QueueTabText), nameof(ReviewTabText), nameof(CloseSettingsText), nameof(EffectiveSortFolder),
-            nameof(QueueProgressText), nameof(ReviewSelectionText), nameof(SelectedPreviewName)
-            , nameof(PreviewDisplayWidth), nameof(PreviewDisplayHeight)
+            nameof(QueueProgressText), nameof(ReviewSelectionText), nameof(SelectedPreviewName),
+            nameof(ModelsRootFolderText), nameof(ModelsRootFolderTooltip), nameof(PostprocessTabText), nameof(PostprocessPanelText),
+            nameof(PostprocessSourceFolderText), nameof(PostprocessSourceFolderTooltip), nameof(PostprocessOutputFolderText),
+            nameof(PostprocessOutputFolderTooltip), nameof(PostprocessProcessText), nameof(PostprocessOverwriteText), nameof(PostprocessUseGpuText),
+            nameof(PostprocessAutoProcessText), nameof(PostprocessSelectedCountText), nameof(PostprocessModelText),
+            nameof(PostprocessModelDescriptionText), nameof(PostprocessStatusText), nameof(PostprocessProgressText),
+            nameof(PostprocessProgressLabelText), nameof(PostprocessPreviewText), nameof(PostprocessBeforePreviewText),
+            nameof(PostprocessAfterPreviewText), nameof(PostprocessSelectedFileText), nameof(PostprocessEnabledColumnText),
+            nameof(PostprocessFileColumnText), nameof(PostprocessStatusColumnText), nameof(SelectedPostprocessModelPathText),
+            nameof(PreviewDisplayWidth), nameof(PreviewDisplayHeight)
         ];
 
         foreach (var name in names)
@@ -537,7 +574,8 @@ public sealed class MainWindowViewModel : ObservableObject
             ShowNewFolderButton = false
         };
 
-        if (dialog.ShowDialog() == Forms.DialogResult.OK && !string.IsNullOrWhiteSpace(dialog.SelectedPath))
+        var owner = GetDialogOwner();
+        if (dialog.ShowDialog(owner) == Forms.DialogResult.OK && !string.IsNullOrWhiteSpace(dialog.SelectedPath))
         {
             var files = Directory.EnumerateFiles(
                 dialog.SelectedPath,
@@ -569,7 +607,8 @@ public sealed class MainWindowViewModel : ObservableObject
     private void BrowseOutput()
     {
         using var dialog = BuildFolderDialog(T("\u0412\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u043f\u0430\u043f\u043a\u0443 Out", "Select Out folder"));
-        if (dialog.ShowDialog() == Forms.DialogResult.OK && !string.IsNullOrWhiteSpace(dialog.SelectedPath))
+        var owner = GetDialogOwner();
+        if (dialog.ShowDialog(owner) == Forms.DialogResult.OK && !string.IsNullOrWhiteSpace(dialog.SelectedPath))
         {
             OutputFolder = dialog.SelectedPath;
             ResetSortFolderWatcher();
@@ -579,17 +618,20 @@ public sealed class MainWindowViewModel : ObservableObject
     private void BrowseSortFolder()
     {
         using var dialog = BuildFolderDialog(T("\u0412\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u043f\u0430\u043f\u043a\u0443 \u0434\u043b\u044f \u0441\u043e\u0440\u0442\u0438\u0440\u043e\u0432\u043a\u0438", "Select review folder"));
-        if (dialog.ShowDialog() == Forms.DialogResult.OK && !string.IsNullOrWhiteSpace(dialog.SelectedPath))
+        var owner = GetDialogOwner();
+        if (dialog.ShowDialog(owner) == Forms.DialogResult.OK && !string.IsNullOrWhiteSpace(dialog.SelectedPath))
         {
             SortFolder = dialog.SelectedPath;
             ResetSortFolderWatcher();
+            _ = LoadSortPhotosAsync();
         }
     }
 
     private void BrowseFinalFolder()
     {
         using var dialog = BuildFolderDialog(T("\u0412\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u0444\u0438\u043d\u0430\u043b\u044c\u043d\u0443\u044e \u043f\u0430\u043f\u043a\u0443", "Select final folder"));
-        if (dialog.ShowDialog() == Forms.DialogResult.OK && !string.IsNullOrWhiteSpace(dialog.SelectedPath))
+        var owner = GetDialogOwner();
+        if (dialog.ShowDialog(owner) == Forms.DialogResult.OK && !string.IsNullOrWhiteSpace(dialog.SelectedPath))
         {
             FinalFolder = dialog.SelectedPath;
         }
@@ -602,6 +644,27 @@ public sealed class MainWindowViewModel : ObservableObject
             Description = description,
             ShowNewFolderButton = true
         };
+    }
+
+    private static Forms.IWin32Window? GetDialogOwner()
+    {
+        var window = System.Windows.Application.Current?.MainWindow;
+        if (window is null)
+        {
+            return null;
+        }
+
+        return new Win32Window(new WindowInteropHelper(window).Handle);
+    }
+
+    private sealed class Win32Window : Forms.IWin32Window
+    {
+        public Win32Window(IntPtr handle)
+        {
+            Handle = handle;
+        }
+
+        public IntPtr Handle { get; }
     }
 
     private void AddFile(string fullPath)
@@ -650,11 +713,17 @@ public sealed class MainWindowViewModel : ObservableObject
     {
         Files.Clear();
         ClearSortPhotos();
+        FinalSortPhotos.Clear();
+        ResetPostprocessWorkspace();
         SelectedFile = null;
         SelectedSortPhoto = null;
+        SelectedFinalSortPhoto = null;
         _selectedSortPhotos.Clear();
+        _selectedFinalSortPhotos.Clear();
         RaisePropertyChanged(nameof(SelectedSortPhotosCount));
+        RaisePropertyChanged(nameof(SelectedFinalSortPhotosCount));
         RaisePropertyChanged(nameof(ReviewSelectionText));
+        RaisePropertyChanged(nameof(FinalSelectionCountText));
         XmpPresetPath = string.Empty;
         OutputFolder = string.Empty;
         SortFolder = string.Empty;
@@ -708,7 +777,7 @@ public sealed class MainWindowViewModel : ObservableObject
             var progress = new Progress<ProcessingProgress>(UpdateProcessingProgress);
             var result = await _photoBatchService.ProcessAsync(Files.ToList(), settings, progress);
             LogText += string.Join(Environment.NewLine, result) + Environment.NewLine;
-            LoadSortPhotos();
+            await LoadSortPhotosAsync();
         }
         catch (Exception ex)
         {
@@ -727,7 +796,7 @@ public sealed class MainWindowViewModel : ObservableObject
         }
     }
 
-    private void LoadSortPhotos()
+    private async Task LoadSortPhotosAsync()
     {
         var sourceFolder = GetActiveSortSourceFolder();
         if (!Directory.Exists(sourceFolder))
@@ -736,41 +805,66 @@ public sealed class MainWindowViewModel : ObservableObject
             return;
         }
 
-        var rememberedSelection = SortPhotos.Where(item => item.IsSelectedForFinal).Select(item => item.FilePath).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var currentPreviewPath = SelectedSortPhoto?.FilePath;
-        ClearSortPhotos();
-
-        var files = Directory.EnumerateFiles(sourceFolder, "*.*", SearchOption.TopDirectoryOnly)
-            .Where(file =>
-            {
-                var extension = Path.GetExtension(file);
-                return extension.Equals(".jpg", StringComparison.OrdinalIgnoreCase) ||
-                       extension.Equals(".jpeg", StringComparison.OrdinalIgnoreCase);
-            })
-            .OrderBy(file => file, StringComparer.OrdinalIgnoreCase);
-
-        foreach (var file in files)
-        {
-            var info = new FileInfo(file);
-            var item = new SortPhotoItem
-            {
-                FilePath = file,
-                FileName = info.Name,
-                LastWriteTime = info.LastWriteTime,
-                Thumbnail = CreateThumbnail(file),
-                IsSelectedForFinal = rememberedSelection.Contains(file)
-            };
-            item.PropertyChanged += OnSortPhotoPropertyChanged;
-            SortPhotos.Add(item);
-        }
-
-        ApplySortMode();
-        SelectedSortPhoto = SortPhotos.FirstOrDefault(item => string.Equals(item.FilePath, currentPreviewPath, StringComparison.OrdinalIgnoreCase))
-            ?? SortPhotos.FirstOrDefault();
-        SetSelectedSortPhotos(SelectedSortPhoto is null ? [] : [SelectedSortPhoto]);
-        ResetSortFolderWatcher();
-        RaisePropertyChanged(nameof(FinalSelectionCountText));
+        _isLoadingSortPhotos = true;
         RefreshCommands();
+        try
+        {
+            var rememberedFinalSelection = _pendingFinalSelectionPaths
+                ?? FinalSortPhotos.Select(item => item.FilePath).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var rememberedSourceSelection = _selectedSortPhotos.Select(item => item.FilePath).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var rememberedFinalSelectionUi = _selectedFinalSortPhotos.Select(item => item.FilePath).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var currentPreviewPath = GetPreviewTargetPhoto()?.FilePath;
+            var currentSelectionSnapshot = _selectedSortPhotos.Select(item => item.FilePath).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            ClearSortPhotos();
+            FinalSortPhotos.Clear();
+            _selectedFinalSortPhotos.Clear();
+
+            var files = Directory.EnumerateFiles(sourceFolder, "*.*", SearchOption.TopDirectoryOnly)
+                .Where(file =>
+                {
+                    var extension = Path.GetExtension(file);
+                    return extension.Equals(".jpg", StringComparison.OrdinalIgnoreCase) ||
+                           extension.Equals(".jpeg", StringComparison.OrdinalIgnoreCase);
+                })
+                .OrderBy(file => file, StringComparer.OrdinalIgnoreCase);
+
+            foreach (var file in files)
+            {
+                var info = new FileInfo(file);
+                var item = new SortPhotoItem
+                {
+                    FilePath = file,
+                    FileName = info.Name,
+                    LastWriteTime = info.LastWriteTime,
+                    IsSelectedForFinal = rememberedFinalSelection.Contains(file)
+                };
+                item.PropertyChanged += OnSortPhotoPropertyChanged;
+                SortPhotos.Add(item);
+            }
+
+            ApplySortMode();
+            RestoreFinalSelection(rememberedFinalSelection);
+            SelectedSortPhoto = SortPhotos.FirstOrDefault(item => string.Equals(item.FilePath, currentPreviewPath, StringComparison.OrdinalIgnoreCase))
+                ?? SortPhotos.FirstOrDefault(item => rememberedSourceSelection.Contains(item.FilePath))
+                ?? SortPhotos.FirstOrDefault();
+            SetSelectedSortPhotos(currentSelectionSnapshot.Count > 0
+                ? SortPhotos.Where(item => currentSelectionSnapshot.Contains(item.FilePath))
+                : (SelectedSortPhoto is null ? [] : [SelectedSortPhoto]));
+            SetSelectedFinalSortPhotos(rememberedFinalSelectionUi.Count > 0
+                ? FinalSortPhotos.Where(item => rememberedFinalSelectionUi.Contains(item.FilePath))
+                : (SelectedFinalSortPhoto is null ? [] : [SelectedFinalSortPhoto]));
+            _pendingFinalSelectionPaths = null;
+            ResetSortFolderWatcher();
+            RaisePropertyChanged(nameof(FinalSelectionCountText));
+            RefreshCommands();
+
+            await LoadThumbnailsInBackgroundAsync(SortPhotos.ToList());
+        }
+        finally
+        {
+            _isLoadingSortPhotos = false;
+            RefreshCommands();
+        }
     }
 
     private static BitmapImage? CreateThumbnail(string filePath)
@@ -791,6 +885,46 @@ public sealed class MainWindowViewModel : ObservableObject
         {
             return null;
         }
+    }
+
+    private async Task LoadThumbnailsInBackgroundAsync(IReadOnlyList<SortPhotoItem> items)
+    {
+        if (items.Count == 0)
+        {
+            return;
+        }
+
+        var dispatcher = System.Windows.Application.Current?.Dispatcher;
+        if (dispatcher is null)
+        {
+            return;
+        }
+
+        var parallelOptions = new ParallelOptions
+        {
+            MaxDegreeOfParallelism = Math.Max(2, Environment.ProcessorCount / 2)
+        };
+
+        await Parallel.ForEachAsync(items, parallelOptions, async (item, cancellationToken) =>
+        {
+            if (_thumbnailCache.TryGetValue(item.FilePath, out var cached))
+            {
+                if (cached is not null)
+                {
+                    await dispatcher.InvokeAsync(() => item.Thumbnail = cached);
+                }
+
+                return;
+            }
+
+            var thumbnail = await Task.Run(() => CreateThumbnail(item.FilePath), cancellationToken);
+            _thumbnailCache[item.FilePath] = thumbnail;
+
+            if (thumbnail is not null)
+            {
+                await dispatcher.InvokeAsync(() => item.Thumbnail = thumbnail);
+            }
+        });
     }
 
     private static BitmapImage? CreatePreviewImage(string filePath)
@@ -836,58 +970,12 @@ public sealed class MainWindowViewModel : ObservableObject
 
     private void MarkCurrentForFinal()
     {
-        var targets = GetActiveReviewTargets();
-        if (targets.Count == 0)
-        {
-            return;
-        }
-
-        foreach (var photo in targets)
-        {
-            photo.IsSelectedForFinal = true;
-        }
-
-        RaisePropertyChanged(nameof(FinalSelectionCountText));
-        RefreshCommands();
+        AddSelectedSortPhotosToFinal(GetActiveReviewTargets());
     }
 
     private void UnmarkCurrentForFinal()
     {
-        var targets = GetActiveReviewTargets();
-        if (targets.Count == 0)
-        {
-            return;
-        }
-
-        foreach (var photo in targets)
-        {
-            photo.IsSelectedForFinal = false;
-        }
-
-        RaisePropertyChanged(nameof(FinalSelectionCountText));
-        RefreshCommands();
-    }
-
-    private void SelectAllSortPhotos()
-    {
-        foreach (var photo in SortPhotos)
-        {
-            photo.IsSelectedForFinal = true;
-        }
-
-        RaisePropertyChanged(nameof(FinalSelectionCountText));
-        RefreshCommands();
-    }
-
-    private void ClearSortSelection()
-    {
-        foreach (var photo in SortPhotos)
-        {
-            photo.IsSelectedForFinal = false;
-        }
-
-        RaisePropertyChanged(nameof(FinalSelectionCountText));
-        RefreshCommands();
+        RemoveSelectedSortPhotosFromFinal(GetActiveReviewTargets());
     }
 
     private void DeleteSelectedSortPhotos()
@@ -898,43 +986,35 @@ public sealed class MainWindowViewModel : ObservableObject
             return;
         }
 
+        var deleted = false;
         foreach (var photo in targets)
         {
             photo.PropertyChanged -= OnSortPhotoPropertyChanged;
-            SortPhotos.Remove(photo);
+            try
+            {
+                if (File.Exists(photo.FilePath))
+                {
+                    File.Delete(photo.FilePath);
+                }
+
+                deleted = true;
+            }
+            catch (Exception ex)
+            {
+                LogText += $"{T("Ошибка удаления", "Delete error")}: {photo.FileName} - {ex.Message}{Environment.NewLine}";
+            }
         }
 
         _selectedSortPhotos.Clear();
-        SelectedSortPhoto = SortPhotos.FirstOrDefault();
-        RaisePropertyChanged(nameof(SelectedSortPhotosCount));
-        RaisePropertyChanged(nameof(ReviewSelectionText));
-        RaisePropertyChanged(nameof(FinalSelectionCountText));
-        RefreshCommands();
-    }
-
-    private void SendToFinalFolder()
-    {
-        if (!CanSendToFinalFolder())
+        SelectedSortPhoto = null;
+        if (deleted)
         {
-            return;
+            _ = LoadSortPhotosAsync();
         }
-
-        Directory.CreateDirectory(FinalFolder);
-        var selected = SortPhotos.Where(item => item.IsSelectedForFinal).ToList();
-
-        foreach (var item in selected)
+        else
         {
-            var destination = Path.Combine(FinalFolder, item.FileName);
-            File.Copy(item.FilePath, destination, overwrite: true);
+            RefreshCommands();
         }
-
-        LogText += $"{T("\u0412 \u0444\u0438\u043d\u0430\u043b\u044c\u043d\u0443\u044e \u043f\u0430\u043f\u043a\u0443 \u0441\u043a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u043d\u043e", "Copied to final folder")}: {selected.Count}\r\n";
-        OpenFolder(FinalFolder);
-    }
-
-    private bool CanSendToFinalFolder()
-    {
-        return SortPhotos.Any(item => item.IsSelectedForFinal) && !string.IsNullOrWhiteSpace(FinalFolder);
     }
 
     private void SaveProject()
@@ -970,7 +1050,24 @@ public sealed class MainWindowViewModel : ObservableObject
             UseExternalAi = UseExternalAi,
             RenderRawWithPhotoshop = RenderRawWithPhotoshop,
             SortMode = SortMode,
-            FinalSelection = SortPhotos.Where(item => item.IsSelectedForFinal).Select(item => item.FilePath).ToList()
+            FinalSelection = FinalSortPhotos.Select(item => item.FilePath).ToList(),
+            PostprocessSourceFolder = PostprocessSourceFolder,
+            PostprocessAutoProcess = AutoProcessPostprocess,
+            PostprocessUseGpu = UseGpuForModels,
+            PostprocessSelectedModelPath = SelectedPostprocessModel?.FilePath ?? string.Empty,
+            PostprocessPlans = PostprocessFiles.Select(item => new PostprocessPlanState
+            {
+                FilePath = item.FilePath,
+                IsEnabled = item.IsEnabled,
+                SelectedModelPath = item.SelectedModelPath
+            }).ToList(),
+            PostprocessFiles = PostprocessFiles.Select(item => item.FilePath).ToList(),
+            PostprocessSelectedFiles = PostprocessFiles.Where(item => item.IsEnabled).Select(item => item.FilePath).ToList(),
+            PostprocessProcessedFiles = _processedPostprocessFiles.ToList(),
+            PostprocessModelSettings = _postprocessSettingsCache.ToDictionary(
+                entry => entry.Key,
+                entry => entry.Value.ToDictionary(setting => setting.Key, setting => setting.Value, StringComparer.OrdinalIgnoreCase),
+                StringComparer.OrdinalIgnoreCase)
         };
 
         var json = JsonSerializer.Serialize(state, new JsonSerializerOptions { WriteIndented = true });
@@ -1022,20 +1119,42 @@ public sealed class MainWindowViewModel : ObservableObject
         UseExternalAi = state.UseExternalAi;
         RenderRawWithPhotoshop = state.RenderRawWithPhotoshop;
         SortMode = state.SortMode;
+        PostprocessSourceFolder = state.PostprocessSourceFolder;
+        AutoProcessPostprocess = state.PostprocessAutoProcess;
+        UseGpuForModels = state.PostprocessUseGpu;
+        _pendingFinalSelectionPaths = state.FinalSelection.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        _pendingPostprocessPlans = state.PostprocessPlans?.ToList() ?? [];
+        _pendingPostprocessSelectedPaths = state.PostprocessSelectedFiles.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        _processedPostprocessFiles.Clear();
+        foreach (var path in state.PostprocessProcessedFiles)
+        {
+            _processedPostprocessFiles.Add(path);
+        }
+        _postprocessSettingsCache.Clear();
+        if (state.PostprocessModelSettings is not null)
+        {
+            foreach (var entry in state.PostprocessModelSettings)
+            {
+                _postprocessSettingsCache[entry.Key] = new Dictionary<string, string>(entry.Value, StringComparer.OrdinalIgnoreCase);
+            }
+        }
 
         _projectFilePath = dialog.FileName;
         RaisePropertyChanged(nameof(CurrentProjectPath));
 
-        LoadSortPhotos();
-        var selectedPaths = state.FinalSelection.ToHashSet(StringComparer.OrdinalIgnoreCase);
-        foreach (var photo in SortPhotos)
+        _ = LoadSortPhotosAsync();
+        EnsurePostprocessModelsLoaded(forceReload: false);
+        _ = LoadPostprocessFilesAsync(allowAutoProcess: false);
+        if (!string.IsNullOrWhiteSpace(state.PostprocessSelectedModelPath))
         {
-            photo.IsSelectedForFinal = selectedPaths.Contains(photo.FilePath);
+            SelectedPostprocessModel = AvailablePostprocessModels.FirstOrDefault(model => string.Equals(model.FilePath, state.PostprocessSelectedModelPath, StringComparison.OrdinalIgnoreCase))
+                ?? AvailablePostprocessModels.FirstOrDefault(model => string.Equals(Path.GetFileName(model.FilePath), Path.GetFileName(state.PostprocessSelectedModelPath), StringComparison.OrdinalIgnoreCase))
+                ?? AvailablePostprocessModels.FirstOrDefault();
         }
 
-        RaisePropertyChanged(nameof(FinalSelectionCountText));
         LogText += $"{T("\u041f\u0440\u043e\u0435\u043a\u0442 \u0437\u0430\u0433\u0440\u0443\u0436\u0435\u043d", "Project loaded")}: {_projectFilePath}\r\n";
         ResetSortFolderWatcher();
+        ResetPostprocessFolderWatcher();
     }
 
     private string GetActiveSortSourceFolder()
@@ -1071,7 +1190,7 @@ public sealed class MainWindowViewModel : ObservableObject
     {
         Summary = Files.Count == 0
             ? T("\u0421\u043f\u0438\u0441\u043e\u043a \u0438\u0441\u0445\u043e\u0434\u043d\u0438\u043a\u043e\u0432 \u043f\u0443\u0441\u0442.", "No source files added.")
-            : T($"\u0412 \u043e\u0447\u0435\u0440\u0435\u0434\u0438: {Files.Count}. \u0412 \u0444\u0438\u043d\u0430\u043b\u044c\u043d\u043e\u043c \u043e\u0442\u0431\u043e\u0440\u0435: {SortPhotos.Count(item => item.IsSelectedForFinal)}.", $"Queued: {Files.Count}. Final picks: {SortPhotos.Count(item => item.IsSelectedForFinal)}.");
+            : T($"\u0412 \u043e\u0447\u0435\u0440\u0435\u0434\u0438: {Files.Count}. \u0412 \u0444\u0438\u043d\u0430\u043b\u044c\u043d\u043e\u043c \u043e\u0442\u0431\u043e\u0440\u0435: {FinalSortPhotos.Count}.", $"Queued: {Files.Count}. Final picks: {FinalSortPhotos.Count}.");
 
         RaisePropertyChanged(nameof(FinalSelectionCountText));
     }
@@ -1095,10 +1214,8 @@ public sealed class MainWindowViewModel : ObservableObject
         OpenSortFolderCommand.RaiseCanExecuteChanged();
         MarkCurrentForFinalCommand.RaiseCanExecuteChanged();
         UnmarkCurrentForFinalCommand.RaiseCanExecuteChanged();
-        SelectAllSortPhotosCommand.RaiseCanExecuteChanged();
-        ClearSortSelectionCommand.RaiseCanExecuteChanged();
         DeleteSelectedSortPhotosCommand.RaiseCanExecuteChanged();
-        SendToFinalFolderCommand.RaiseCanExecuteChanged();
+        RefreshPostprocessCommands();
         UpdateSummary();
     }
 
@@ -1108,8 +1225,6 @@ public sealed class MainWindowViewModel : ObservableObject
         {
             RaisePropertyChanged(nameof(FinalSelectionCountText));
             UpdateSummary();
-            SendToFinalFolderCommand.RaiseCanExecuteChanged();
-            ClearSortSelectionCommand.RaiseCanExecuteChanged();
         }
     }
 
@@ -1131,6 +1246,72 @@ public sealed class MainWindowViewModel : ObservableObject
         RefreshCommands();
     }
 
+    public void SetSelectedFinalSortPhotos(IEnumerable<SortPhotoItem> items)
+    {
+        _selectedFinalSortPhotos.Clear();
+        _selectedFinalSortPhotos.AddRange(items.Where(item => item is not null).Distinct());
+        if (_selectedFinalSortPhotos.Count > 0)
+        {
+            SelectedFinalSortPhoto = _selectedFinalSortPhotos[^1];
+        }
+        else if (SelectedFinalSortPhoto is not null && !FinalSortPhotos.Contains(SelectedFinalSortPhoto))
+        {
+            SelectedFinalSortPhoto = null;
+        }
+
+        RaisePropertyChanged(nameof(SelectedFinalSortPhotosCount));
+        RaisePropertyChanged(nameof(ReviewSelectionText));
+        RefreshCommands();
+    }
+
+    public void AddSelectedSortPhotosToFinal(IEnumerable<SortPhotoItem> items)
+    {
+        var added = false;
+        foreach (var photo in items.Where(item => item is not null))
+        {
+            if (FinalSortPhotos.Contains(photo))
+            {
+                continue;
+            }
+
+            photo.IsSelectedForFinal = true;
+            FinalSortPhotos.Add(photo);
+            added = true;
+        }
+
+        if (added)
+        {
+            RaisePropertyChanged(nameof(SelectedFinalSortPhotosCount));
+        }
+        RaisePropertyChanged(nameof(FinalSelectionCountText));
+        UpdateSummary();
+        RefreshCommands();
+    }
+
+    public void RemoveSelectedSortPhotosFromFinal(IEnumerable<SortPhotoItem> items)
+    {
+        var removed = false;
+        foreach (var photo in items.Where(item => item is not null).ToList())
+        {
+            if (!FinalSortPhotos.Contains(photo))
+            {
+                continue;
+            }
+
+            photo.IsSelectedForFinal = false;
+            FinalSortPhotos.Remove(photo);
+            removed = true;
+        }
+
+        if (removed)
+        {
+            RaisePropertyChanged(nameof(SelectedFinalSortPhotosCount));
+        }
+        RaisePropertyChanged(nameof(FinalSelectionCountText));
+        UpdateSummary();
+        RefreshCommands();
+    }
+
     private List<SortPhotoItem> GetActiveReviewTargets()
     {
         if (_selectedSortPhotos.Count > 0)
@@ -1138,15 +1319,42 @@ public sealed class MainWindowViewModel : ObservableObject
             return _selectedSortPhotos.ToList();
         }
 
-        return SelectedSortPhoto is null ? [] : [SelectedSortPhoto];
+        if (_selectedFinalSortPhotos.Count > 0)
+        {
+            return _selectedFinalSortPhotos.ToList();
+        }
+
+        var preview = GetPreviewTargetPhoto();
+        return preview is null ? [] : [preview];
     }
 
     private void UpdateSelectedPreviewImage()
     {
-        _selectedPreviewImage = SelectedSortPhoto is null ? null : CreatePreviewImage(SelectedSortPhoto.FilePath);
+        var previewTarget = GetPreviewTargetPhoto();
+        _selectedPreviewImage = previewTarget is null ? null : CreatePreviewImage(previewTarget.FilePath);
         RaisePropertyChanged(nameof(SelectedPreviewImage));
         RaisePropertyChanged(nameof(PreviewDisplayWidth));
         RaisePropertyChanged(nameof(PreviewDisplayHeight));
+    }
+
+    private SortPhotoItem? GetPreviewTargetPhoto()
+    {
+        if (SelectedSortPhoto is not null)
+        {
+            return SelectedSortPhoto;
+        }
+
+        if (SelectedFinalSortPhoto is not null)
+        {
+            return SelectedFinalSortPhoto;
+        }
+
+        if (_selectedSortPhotos.Count > 0)
+        {
+            return _selectedSortPhotos[^1];
+        }
+
+        return _selectedFinalSortPhotos.Count > 0 ? _selectedFinalSortPhotos[^1] : null;
     }
 
     public void UpdatePreviewViewport(double width, double height)
@@ -1185,6 +1393,26 @@ public sealed class MainWindowViewModel : ObservableObject
         }
 
         SortPhotos.Clear();
+    }
+
+    private void RestoreFinalSelection(IEnumerable<string> filePaths)
+    {
+        var selectedPaths = filePaths.Where(path => !string.IsNullOrWhiteSpace(path))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        FinalSortPhotos.Clear();
+        _selectedFinalSortPhotos.Clear();
+
+        foreach (var photo in SortPhotos)
+        {
+            photo.IsSelectedForFinal = selectedPaths.Contains(photo.FilePath);
+            if (photo.IsSelectedForFinal)
+            {
+                FinalSortPhotos.Add(photo);
+            }
+        }
+
+        SelectedFinalSortPhoto = FinalSortPhotos.FirstOrDefault();
     }
 
     private void ResetSortFolderWatcher()
@@ -1248,7 +1476,7 @@ public sealed class MainWindowViewModel : ObservableObject
                     return;
                 }
 
-                System.Windows.Application.Current?.Dispatcher.Invoke(() => LoadSortPhotos());
+                System.Windows.Application.Current?.Dispatcher.Invoke(() => _ = LoadSortPhotosAsync());
             }
             catch (TaskCanceledException)
             {

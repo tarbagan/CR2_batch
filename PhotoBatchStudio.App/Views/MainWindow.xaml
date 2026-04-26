@@ -10,6 +10,7 @@
         Height="960"
         MinWidth="1240"
         MinHeight="780"
+        WindowState="Maximized"
         Background="#F4F1EA">
     <Window.Resources>
         <vm:BooleanToVisibilityExConverter x:Key="BoolToVisibilityEx" />
@@ -79,50 +80,6 @@
                                 </StackPanel>
                             </Border>
 
-                            <Border Padding="10"
-                                    Margin="0,0,10,8"
-                                    CornerRadius="12"
-                                    Background="#315986">
-                                <StackPanel>
-                                    <TextBlock Margin="0,0,0,8"
-                                               FontSize="11"
-                                               Foreground="#DDE7F3"
-                                               Text="2. Source Queue" />
-                                    <WrapPanel>
-                                        <Button Content="{Binding AddFilesText}"
-                                                Padding="14,8"
-                                                Margin="0,0,8,0"
-                                                Command="{Binding AddFilesCommand}" />
-                                        <Button Content="{Binding AddFolderText}"
-                                                Padding="14,8"
-                                                Margin="0,0,8,0"
-                                                Command="{Binding AddFolderCommand}" />
-                                        <Button Content="{Binding RemoveSelectedText}"
-                                                Padding="14,8"
-                                                Margin="0,0,8,0"
-                                                Command="{Binding RemoveSelectedCommand}" />
-                                        <Button Content="{Binding ClearListText}"
-                                                Padding="14,8"
-                                                Command="{Binding ClearListCommand}" />
-                                    </WrapPanel>
-                                </StackPanel>
-                            </Border>
-
-                            <Border Padding="10"
-                                    Margin="0,0,10,8"
-                                    CornerRadius="12"
-                                    Background="#3D6A3F">
-                                <StackPanel>
-                                    <TextBlock Margin="0,0,0,8"
-                                               FontSize="11"
-                                               Foreground="#E4F2E5"
-                                               Text="3. Render" />
-                                    <Button Content="{Binding StartBatchText}"
-                                            Padding="18,8"
-                                            Command="{Binding StartProcessingCommand}" />
-                                </StackPanel>
-                            </Border>
-
                             <Button Width="42"
                                     Height="40"
                                     Margin="0,0,0,8"
@@ -137,8 +94,6 @@
                 <Grid Grid.Row="1"
                       Margin="0,18,0,0">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="16" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="16" />
                         <ColumnDefinition Width="*" />
@@ -189,28 +144,6 @@
                         </StackPanel>
                     </Border>
 
-                    <Border Grid.Column="4"
-                            Padding="12"
-                            CornerRadius="14"
-                            Background="#2A4B76">
-                        <StackPanel>
-                            <TextBlock Text="{Binding FinalFolderText}"
-                                       FontWeight="SemiBold"
-                                       Foreground="White"
-                                       ToolTip="{Binding FinalFolderTooltip}" />
-                            <DockPanel Margin="0,8,0,0">
-                                <Button DockPanel.Dock="Right"
-                                        Margin="8,0,0,0"
-                                        Padding="12,6"
-                                        Content="{Binding BrowseText}"
-                                        ToolTip="{Binding FinalFolderTooltip}"
-                                        Command="{Binding BrowseFinalFolderCommand}" />
-                                <TextBox Text="{Binding FinalFolder, UpdateSourceTrigger=PropertyChanged}"
-                                         ToolTip="{Binding FinalFolderTooltip}"
-                                         Background="#F7F4EE" />
-                            </DockPanel>
-                        </StackPanel>
-                    </Border>
                 </Grid>
             </Grid>
         </Border>
@@ -224,9 +157,11 @@
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <TabControl Grid.Column="0"
-                        Margin="0,0,16,16">
-                <TabItem Header="{Binding QueueTabText}">
+            <TabControl x:Name="MainTabControl"
+                        Grid.Column="0"
+                        Margin="0,0,16,16"
+                        SelectionChanged="MainTabControl_OnSelectionChanged">
+                <TabItem Header="Шаг 1. Обработка пресетом">
                     <Border Padding="14"
                             CornerRadius="16"
                             Background="White">
@@ -242,6 +177,29 @@
                                        FontSize="20"
                                        FontWeight="SemiBold"
                                        Foreground="#2C2C2C" />
+
+                            <WrapPanel Margin="0,12,0,0">
+                                <Button Content="{Binding AddFilesText}"
+                                        Padding="12,6"
+                                        Margin="0,0,8,8"
+                                        Command="{Binding AddFilesCommand}" />
+                                <Button Content="{Binding AddFolderText}"
+                                        Padding="12,6"
+                                        Margin="0,0,8,8"
+                                        Command="{Binding AddFolderCommand}" />
+                                <Button Content="{Binding RemoveSelectedText}"
+                                        Padding="12,6"
+                                        Margin="0,0,8,8"
+                                        Command="{Binding RemoveSelectedCommand}" />
+                                <Button Content="{Binding ClearListText}"
+                                        Padding="12,6"
+                                        Margin="0,0,8,8"
+                                        Command="{Binding ClearListCommand}" />
+                                <Button Content="{Binding StartBatchText}"
+                                        Padding="18,8"
+                                        Margin="16,0,0,8"
+                                        Command="{Binding StartProcessingCommand}" />
+                            </WrapPanel>
 
                             <Border Grid.Row="1"
                                     Margin="0,12,0,12"
@@ -300,7 +258,7 @@
                     </Border>
                 </TabItem>
 
-                <TabItem Header="{Binding ReviewTabText}">
+                <TabItem Header="Шаг 2. Отбор и сортировка">
                     <Grid Margin="0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="1.1*" />
@@ -320,7 +278,7 @@
                                 </Grid.RowDefinitions>
 
                                 <StackPanel>
-                                    <TextBlock Text="{Binding ReviewPanelText}"
+                                    <TextBlock Text="Шаг 2. Отбор и сортировка"
                                                FontSize="20"
                                                FontWeight="SemiBold"
                                                Foreground="#2C2C2C" />
@@ -335,50 +293,12 @@
                                     </DockPanel>
 
                                     <TextBlock Margin="0,6,0,0"
-                                               Foreground="#6A6A6A"
+                                               Foreground="#8A6A4A"
                                                TextWrapping="Wrap"
+                                               FontWeight="SemiBold"
                                                Text="{Binding SortFolderHintText}" />
 
-                                    <WrapPanel Margin="0,12,0,0">
-                                        <Button Content="{Binding LoadJpgsText}"
-                                                Padding="12,6"
-                                                Margin="0,0,8,8"
-                                                Command="{Binding LoadSortPhotosCommand}" />
-                                        <Button Content="{Binding RefreshListText}"
-                                                Padding="12,6"
-                                                Margin="0,0,8,8"
-                                                ToolTip="{Binding RefreshListTooltip}"
-                                                Command="{Binding RefreshSortPhotosCommand}" />
-                                        <Button Content="{Binding OpenFolderText}"
-                                                Padding="12,6"
-                                                Margin="0,0,8,8"
-                                                Command="{Binding OpenSortFolderCommand}" />
-                                    </WrapPanel>
-
-                                    <WrapPanel Margin="0,4,0,0">
-                                        <Button Content="{Binding KeepText}"
-                                                Padding="12,6"
-                                                Margin="0,0,8,8"
-                                                Command="{Binding MarkCurrentForFinalCommand}" />
-                                        <Button Content="{Binding UnkeepText}"
-                                                Padding="12,6"
-                                                Margin="0,0,8,8"
-                                                Command="{Binding UnmarkCurrentForFinalCommand}" />
-                                        <Button Content="{Binding RemoveFromReviewText}"
-                                                Padding="12,6"
-                                                Margin="0,0,8,8"
-                                                Command="{Binding DeleteSelectedSortPhotosCommand}" />
-                                    </WrapPanel>
-
-                                    <WrapPanel Margin="0,4,0,0">
-                                        <Button Content="{Binding SelectAllText}"
-                                                Padding="12,6"
-                                                Margin="0,0,8,8"
-                                                Command="{Binding SelectAllSortPhotosCommand}" />
-                                        <Button Content="{Binding ClearSelectionText}"
-                                                Padding="12,6"
-                                                Margin="0,0,16,8"
-                                                Command="{Binding ClearSortSelectionCommand}" />
+                                    <WrapPanel Margin="0,2,0,0">
                                         <TextBlock VerticalAlignment="Center"
                                                    Margin="0,0,8,8"
                                                    Text="{Binding SortModeText}" />
@@ -392,32 +312,6 @@
                                                    Margin="0,0,0,8"
                                                    Text="{Binding ReviewSelectionText}" />
                                     </WrapPanel>
-
-                                    <TextBlock Margin="0,4,0,0"
-                                               Text="{Binding FinalSelectionCountText}"
-                                               Foreground="#6A6A6A" />
-
-                                    <Border Margin="0,14,0,0"
-                                            Padding="12"
-                                            CornerRadius="12"
-                                            Background="#E6F0E4"
-                                            BorderBrush="#B9D0B5"
-                                            BorderThickness="1">
-                                        <StackPanel>
-                                            <TextBlock FontWeight="SemiBold"
-                                                       Foreground="#29522C"
-                                                       Text="4. Final Output" />
-                                            <TextBlock Margin="0,6,0,10"
-                                                       Foreground="#527255"
-                                                       TextWrapping="Wrap"
-                                                       Text="{Binding FinalFolder}" />
-                                            <Button Content="{Binding SendToFinalText}"
-                                                    Padding="16,8"
-                                                    HorizontalAlignment="Left"
-                                                    ToolTip="{Binding SendToFinalTooltip}"
-                                                    Command="{Binding SendToFinalFolderCommand}" />
-                                        </StackPanel>
-                                    </Border>
                                 </StackPanel>
 
                                 <ListBox x:Name="SortListBox"
@@ -425,13 +319,12 @@
                                          Margin="0,12,0,0"
                                          BorderThickness="0"
                                          SelectionMode="Extended"
-                                         SelectedItem="{Binding SelectedSortPhoto, Mode=TwoWay}"
                                          SelectionChanged="SortListBox_OnSelectionChanged"
                                          PreviewKeyDown="SortListBox_OnPreviewKeyDown"
                                          ItemsSource="{Binding SortPhotos}">
                                     <ListBox.ContextMenu>
                                         <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
-                                            <MenuItem Header="{Binding RemoveFromReviewText}"
+                                            <MenuItem Header="Удалить из списка"
                                                       Command="{Binding DeleteSelectedSortPhotosCommand}" />
                                         </ContextMenu>
                                     </ListBox.ContextMenu>
@@ -444,9 +337,6 @@
                                                     BorderBrush="#E2DDD5"
                                                     BorderThickness="1">
                                                 <DockPanel>
-                                                    <CheckBox IsChecked="{Binding IsSelectedForFinal, Mode=TwoWay}"
-                                                              VerticalAlignment="Center"
-                                                              Margin="0,0,8,0" />
                                                     <Image Width="72"
                                                            Height="72"
                                                            Margin="0,0,10,0"
@@ -541,25 +431,410 @@
                                            Text="{Binding ReviewSelectionText}"
                                            Foreground="#6A6A6A" />
                                 <TextBlock Margin="0,8,0,0"
-                                           Text="{Binding FinalSelectionCountText}"
-                                           Foreground="#6A6A6A" />
-                                <TextBlock Margin="0,18,0,6"
-                                           FontWeight="SemiBold"
-                                           Text="{Binding SortFolderText}" />
+                                           Text="{Binding SortFolderText}"
+                                           FontWeight="SemiBold" />
                                 <TextBlock Text="{Binding EffectiveSortFolder}"
-                                           TextWrapping="Wrap" />
-                                <TextBlock Margin="0,18,0,6"
-                                           FontWeight="SemiBold"
-                                           Text="{Binding FinalFolderText}" />
-                                <TextBlock Text="{Binding FinalFolder}"
                                            TextWrapping="Wrap" />
                                 <TextBlock Margin="0,18,0,0"
                                            TextWrapping="Wrap"
                                            Foreground="#6A6A6A"
-                                           Text="AI/social actions should be done only after final selection." />
+                                           Text="Удаление из списка удаляет JPG и из папки Out." />
                             </StackPanel>
                         </Border>
                     </Grid>
+                </TabItem>
+
+                <TabItem Header="Шаг 3. ИИ постобработка">
+                    <Grid Margin="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1.15*" />
+                            <ColumnDefinition Width="16" />
+                            <ColumnDefinition Width="1.1*" />
+                            <ColumnDefinition Width="16" />
+                            <ColumnDefinition Width="1.05*" />
+                        </Grid.ColumnDefinitions>
+
+                        <Border Padding="14"
+                                CornerRadius="16"
+                                Background="#FCFBF8">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+
+                                <StackPanel>
+                                    <TextBlock Text="{Binding PostprocessPanelText}"
+                                               FontSize="20"
+                                               FontWeight="SemiBold"
+                                               Foreground="#2C2C2C" />
+
+                                    <TextBlock Margin="0,10,0,4"
+                                               Text="{Binding PostprocessSourceFolderText}" />
+                                    <DockPanel>
+                                        <Button DockPanel.Dock="Right"
+                                                Margin="8,0,0,0"
+                                                Padding="12,6"
+                                                Content="{Binding BrowseText}"
+                                                ToolTip="{Binding PostprocessSourceFolderTooltip}"
+                                                Command="{Binding BrowsePostprocessSourceCommand}" />
+                                        <TextBox Text="{Binding PostprocessSourceFolder, UpdateSourceTrigger=PropertyChanged}"
+                                                 ToolTip="{Binding PostprocessSourceFolderTooltip}" />
+                                    </DockPanel>
+                                    <TextBlock Margin="0,6,0,0"
+                                               Foreground="#6A6A6A"
+                                               Text="{Binding EffectivePostprocessSourceFolder}" />
+
+                                    <TextBlock Margin="0,10,0,0"
+                                               TextWrapping="Wrap"
+                                               Foreground="#8A6A4A"
+                                               Text="{Binding PostprocessPlanHintText}" />
+
+                                    <TextBlock Margin="0,4,0,0"
+                                               Text="{Binding PostprocessSelectedCountText}"
+                                               Foreground="#6A6A6A" />
+                                </StackPanel>
+
+                                <DataGrid x:Name="PostprocessDataGrid"
+                                          Visibility="Collapsed"
+                                          Grid.Row="1"
+                                          Margin="0,12,0,0"
+                                          ItemsSource="{Binding PostprocessFiles}"
+                                          AutoGenerateColumns="False"
+                                          CanUserAddRows="False"
+                                          CanUserDeleteRows="False"
+                                          IsReadOnly="False"
+                                          SelectionMode="Single"
+                                          SelectionUnit="FullRow"
+                                          SelectionChanged="PostprocessDataGrid_OnSelectionChanged"
+                                          PreviewKeyDown="PostprocessDataGrid_OnPreviewKeyDown"
+                                          EnableRowVirtualization="True"
+                                          EnableColumnVirtualization="True"
+                                          VirtualizingPanel.IsVirtualizing="True"
+                                          VirtualizingPanel.ScrollUnit="Pixel">
+                                    <DataGrid.Resources>
+                                        <Style TargetType="DataGridRow">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsEnabled}" Value="False">
+                                                    <Setter Property="Opacity" Value="0.55" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </DataGrid.Resources>
+                                    <DataGrid.Columns>
+                                        <DataGridCheckBoxColumn Header="{Binding DataContext.PostprocessEnabledColumnText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                Binding="{Binding IsEnabled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                Width="78" />
+                                        <DataGridTextColumn Header="✓"
+                                                            Binding="{Binding StatusGlyph}"
+                                                            Width="34"
+                                                            IsReadOnly="True" />
+                                        <DataGridTemplateColumn Header=""
+                                                               Width="68"
+                                                               IsReadOnly="True">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Border Width="48"
+                                                            Height="48"
+                                                            CornerRadius="8"
+                                                            Background="#EFEFEF"
+                                                            HorizontalAlignment="Center"
+                                                            VerticalAlignment="Center">
+                                                        <Image Source="{Binding Thumbnail}"
+                                                               Stretch="UniformToFill"
+                                                               SnapsToDevicePixels="True"
+                                                               RenderOptions.BitmapScalingMode="LowQuality" />
+                                                    </Border>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                        <DataGridTextColumn Header="{Binding DataContext.PostprocessFileColumnText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                            Binding="{Binding FileName}"
+                                                            Width="*" />
+                                        <DataGridTextColumn Header="{Binding DataContext.PostprocessStatusColumnText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                            Binding="{Binding Status}"
+                                                            Width="120"
+                                                            IsReadOnly="True" />
+                                    </DataGrid.Columns>
+                                </DataGrid>
+
+                                <ListBox x:Name="PostprocessListBox"
+                                         Grid.Row="1"
+                                         Margin="0,12,0,0"
+                                         ItemsSource="{Binding PostprocessFiles}"
+                                         SelectionMode="Extended"
+                                         SelectionChanged="PostprocessListBox_OnSelectionChanged"
+                                         PreviewKeyDown="PostprocessListBox_OnPreviewKeyDown"
+                                         ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                         VirtualizingPanel.IsVirtualizing="True"
+                                         VirtualizingPanel.ScrollUnit="Pixel">
+                                    <ListBox.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <VirtualizingStackPanel />
+                                        </ItemsPanelTemplate>
+                                    </ListBox.ItemsPanel>
+                                    <ListBox.ItemContainerStyle>
+                                        <Style TargetType="ListBoxItem">
+                                            <Setter Property="Padding" Value="0" />
+                                            <Setter Property="Margin" Value="0,0,0,8" />
+                                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                        </Style>
+                                    </ListBox.ItemContainerStyle>
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Padding="10"
+                                                    CornerRadius="12"
+                                                    Background="White"
+                                                    BorderBrush="#E3DED2"
+                                                    BorderThickness="1">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="64" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <CheckBox VerticalAlignment="Center"
+                                                              IsChecked="{Binding IsEnabled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                    <TextBlock Grid.Column="1"
+                                                               Margin="8,0,10,0"
+                                                               VerticalAlignment="Center"
+                                                               FontWeight="SemiBold"
+                                                               Text="{Binding StatusGlyph}" />
+                                                    <Border Grid.Column="2"
+                                                            Width="48"
+                                                            Height="48"
+                                                            CornerRadius="8"
+                                                            Background="#EFEFEF"
+                                                            VerticalAlignment="Center">
+                                                        <Image Source="{Binding Thumbnail}"
+                                                               Stretch="UniformToFill"
+                                                               SnapsToDevicePixels="True"
+                                                               RenderOptions.BitmapScalingMode="LowQuality" />
+                                                    </Border>
+                                                    <StackPanel Grid.Column="3"
+                                                                Margin="10,0,0,0"
+                                                                VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding FileName}"
+                                                                   FontWeight="SemiBold"
+                                                                   Foreground="#2C2C2C" />
+                                                        <TextBlock Margin="0,2,0,0"
+                                                                   Text="{Binding Status}"
+                                                                   Foreground="#6A6A6A" />
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </Grid>
+                        </Border>
+
+                        <Border Grid.Column="2"
+                                Padding="14"
+                                CornerRadius="16"
+                                Background="#FFFFFF">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+
+                                <StackPanel>
+                                    <TextBlock Text="{Binding PostprocessPreviewText}"
+                                               FontSize="20"
+                                               FontWeight="SemiBold"
+                                               Foreground="#2C2C2C" />
+                                    <TextBlock Margin="0,8,0,12"
+                                               Text="{Binding SelectedPostprocessPreviewName}"
+                                               Foreground="#6A6A6A" />
+                                    <TextBlock Text="{Binding SelectedPostprocessModelPathText}"
+                                               Foreground="#8A6A4A" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Row="1"
+                                            Margin="0,10,0,8"
+                                            Orientation="Horizontal"
+                                            VerticalAlignment="Center">
+                                    <TextBlock VerticalAlignment="Center"
+                                               Margin="0,0,8,0"
+                                               Text="{Binding ZoomText}" />
+                                    <Slider Width="220"
+                                            Minimum="0.25"
+                                            Maximum="4"
+                                            Value="{Binding SelectedPostprocessPreviewZoom, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+
+                                <Border Grid.Row="2"
+                                        Padding="10"
+                                        CornerRadius="12"
+                                        Background="#F7F4EE">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="*" />
+                                        </Grid.RowDefinitions>
+                                        <TextBlock Text="Preview"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="#2C2C2C" />
+                                        <Border Grid.Row="1"
+                                                Margin="0,8,0,0"
+                                                Background="White"
+                                                CornerRadius="10"
+                                                ClipToBounds="True">
+                                            <ScrollViewer x:Name="PostprocessBeforeScrollViewer"
+                                                          HorizontalScrollBarVisibility="Auto"
+                                                          VerticalScrollBarVisibility="Auto"
+                                                          SizeChanged="PostprocessBeforeScrollViewer_OnSizeChanged"
+                                                          PreviewMouseWheel="PostprocessPreviewScrollViewer_OnPreviewMouseWheel"
+                                                          PreviewMouseLeftButtonDown="PostprocessPreviewScrollViewer_OnPreviewMouseLeftButtonDown"
+                                                          PreviewMouseMove="PostprocessPreviewScrollViewer_OnPreviewMouseMove"
+                                                          PreviewMouseLeftButtonUp="PostprocessPreviewScrollViewer_OnPreviewMouseLeftButtonUp"
+                                                          MouseLeave="PostprocessPreviewScrollViewer_OnPreviewMouseLeave">
+                                                <Image Source="{Binding SelectedPostprocessBeforePreviewImage}"
+                                                       Width="{Binding SelectedPostprocessBeforePreviewDisplayWidth}"
+                                                       Height="{Binding SelectedPostprocessBeforePreviewDisplayHeight}"
+                                                       Stretch="Uniform"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"
+                                                       SnapsToDevicePixels="True"
+                                                       RenderOptions.BitmapScalingMode="HighQuality" />
+                                            </ScrollViewer>
+                                        </Border>
+                                    </Grid>
+                                </Border>
+                            </Grid>
+                        </Border>
+
+                        <Border Grid.Column="4"
+                                Padding="14"
+                                CornerRadius="16"
+                                Background="#FFFFFF">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding PostprocessModelText}"
+                                               FontSize="20"
+                                               FontWeight="SemiBold"
+                                               Foreground="#2C2C2C" />
+                                    <TextBlock Margin="0,4,0,8"
+                                               TextWrapping="Wrap"
+                                               Foreground="#6A6A6A"
+                                               Text="Одна выбранная модель применяется ко всем отмеченным файлам." />
+                                    <TextBlock Margin="0,0,0,12"
+                                               Text="{Binding PostprocessContextText}"
+                                               TextWrapping="Wrap"
+                                               Foreground="#6A6A6A" />
+
+                                    <ComboBox ItemsSource="{Binding AvailablePostprocessModels}"
+                                              SelectedItem="{Binding SelectedPostprocessModel, Mode=TwoWay}"
+                                              DisplayMemberPath="Name"
+                                              ToolTip="{Binding PostprocessModelDescriptionText}" />
+
+                                    <Button Margin="0,10,0,0"
+                                            Padding="14,7"
+                                            HorizontalAlignment="Left"
+                                            Content="Тест модели"
+                                            Click="PostprocessTestButton_Click" />
+
+                                    <TextBlock Margin="0,10,0,0"
+                                               TextWrapping="Wrap"
+                                               Foreground="#6A6A6A"
+                                               Text="{Binding PostprocessModelDescriptionText}" />
+
+                                    <CheckBox Margin="0,14,0,0"
+                                              Content="{Binding PostprocessUseGpuText}"
+                                              IsChecked="{Binding UseGpuForModels}" />
+                                    <CheckBox Margin="0,8,0,0"
+                                              Content="{Binding PostprocessAutoProcessText}"
+                                              IsChecked="{Binding AutoProcessPostprocess}" />
+
+                                    <TextBlock Margin="0,14,0,6"
+                                               Text="{Binding PostprocessSettings.Count, StringFormat='Model settings: {0}'}"
+                                               Foreground="#6A6A6A" />
+                                    <ItemsControl ItemsSource="{Binding PostprocessSettings}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Margin="0,0,0,12">
+                                                    <TextBlock Text="{Binding Label}"
+                                                               FontWeight="SemiBold" />
+                                                    <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
+                                                             ToolTip="{Binding Tooltip}" />
+                                                    <TextBlock Margin="0,4,0,0"
+                                                               Text="{Binding Tooltip}"
+                                                               TextWrapping="Wrap"
+                                                               Foreground="#7A7A7A" />
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+
+                                    <Border Margin="0,6,0,0"
+                                            Padding="10"
+                                            CornerRadius="12"
+                                            Background="#F7F4EE">
+                                        <StackPanel>
+                                            <ProgressBar Height="18"
+                                                         Minimum="0"
+                                                         Maximum="{Binding PostprocessProgressMaximum}"
+                                                         Value="{Binding PostprocessProgressValue}" />
+                                            <TextBlock Margin="0,8,0,0"
+                                                       Text="{Binding PostprocessProgressText}"
+                                                       Foreground="#6A6A6A" />
+                                            <TextBlock Margin="0,4,0,0"
+                                                       Text="{Binding PostprocessStatusText}"
+                                                       Foreground="#2C2C2C" />
+                                        </StackPanel>
+                                    </Border>
+
+                                    <StackPanel Margin="0,14,0,0"
+                                                Orientation="Horizontal">
+                                        <Button Padding="16,8"
+                                                HorizontalAlignment="Left"
+                                                Content="{Binding PostprocessProcessText}"
+                                                Click="PostprocessProcessButton_Click" />
+                                        <Button Margin="10,0,0,0"
+                                                Padding="16,8"
+                                                HorizontalAlignment="Left"
+                                                Content="{Binding PostprocessOverwriteText}"
+                                                Click="PostprocessOverwriteButton_Click" />
+                                    </StackPanel>
+
+                                    <TextBlock Margin="0,14,0,4"
+                                               Text="Лог"
+                                               FontWeight="SemiBold"
+                                               Foreground="#2C2C2C" />
+                                    <TextBox Height="180"
+                                             Text="{Binding PostprocessLogText}"
+                                             IsReadOnly="True"
+                                             TextWrapping="Wrap"
+                                             VerticalScrollBarVisibility="Auto"
+                                             HorizontalScrollBarVisibility="Disabled"
+                                             AcceptsReturn="True" />
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Border>
+                    </Grid>
+                </TabItem>
+
+                <TabItem Header="Шаг 4. Постинг">
+                    <Border Padding="18"
+                            CornerRadius="16"
+                            Background="White">
+                        <StackPanel>
+                            <TextBlock Text="Шаг 4. Постинг в соцсетях"
+                                       FontSize="22"
+                                       FontWeight="SemiBold"
+                                       Foreground="#2C2C2C" />
+                            <TextBlock Margin="0,12,0,0"
+                                       TextWrapping="Wrap"
+                                       Foreground="#6A6A6A"
+                                       Text="Заглушка. Здесь позже появятся шаблоны публикации, экспорт под разные соцсети и отправка финальных JPG." />
+                        </StackPanel>
+                    </Border>
                 </TabItem>
             </TabControl>
 
@@ -569,11 +844,11 @@
                     Background="#FCFBF8"
                     Visibility="{Binding ShowSettings, Converter={StaticResource BoolToVisibilityEx}}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel>
-                        <DockPanel>
-                            <TextBlock Text="{Binding SettingsTitleText}"
-                                       FontSize="20"
-                                       FontWeight="SemiBold"
+                        <StackPanel>
+                            <DockPanel>
+                                <TextBlock Text="{Binding SettingsTitleText}"
+                                           FontSize="20"
+                                           FontWeight="SemiBold"
                                        Foreground="#2C2C2C" />
                             <Button DockPanel.Dock="Right"
                                     Content="{Binding CloseSettingsText}"
@@ -583,19 +858,19 @@
 
                         <TextBlock Margin="0,16,0,4"
                                    Text="{Binding LanguageText}" />
-                        <StackPanel Orientation="Horizontal">
-                            <Button Content="RU"
-                                    Padding="12,6"
-                                    Margin="0,0,8,0"
-                                    Command="{Binding SwitchToRussianCommand}" />
-                            <Button Content="EN"
-                                    Padding="12,6"
-                                    Command="{Binding SwitchToEnglishCommand}" />
-                        </StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="RU"
+                                        Padding="12,6"
+                                        Margin="0,0,8,0"
+                                        Command="{Binding SwitchToRussianCommand}" />
+                                <Button Content="EN"
+                                        Padding="12,6"
+                                        Command="{Binding SwitchToEnglishCommand}" />
+                            </StackPanel>
 
-                        <TextBlock Margin="0,16,0,4"
-                                   Text="{Binding JpegDescriptionText}" />
-                        <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBlock Margin="0,16,0,4"
+                                       Text="{Binding JpegDescriptionText}" />
+                            <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}" />
 
                         <TextBlock Margin="0,12,0,4"
                                    Text="{Binding ExternalAiCommandText}" />

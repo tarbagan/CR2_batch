@@ -1,0 +1,35 @@
+{
+  "Language": "ru",
+  "QueueFiles": [
+    "C:\\PythonProgect\\CR2_bacth\\test\\IMG_9198.CR2"
+  ],
+  "XmpPresetPath": "C:\\PythonProgect\\CR2_bacth\\IMG_5687.xmp",
+  "OutputFolder": "C:\\PythonProgect\\CR2_bacth\\Out",
+  "SortFolder": "",
+  "FinalFolder": "C:\\PythonProgect\\CR2_bacth\\Sort",
+  "ModelsRootFolder": "",
+  "PostprocessSourceFolder": "",
+  "PostprocessOutputFolder": "",
+  "Description": "",
+  "ExternalAiCommand": "",
+  "BlurThreshold": 120,
+  "JpegQuality": 92,
+  "Recursive": true,
+  "OverwriteXmp": false,
+  "DetectBlur": true,
+  "AutoFixBlur": true,
+  "UseExternalAi": false,
+  "RenderRawWithPhotoshop": true,
+  "SortMode": null,
+  "FinalSelection": [
+    "C:\\PythonProgect\\CR2_bacth\\Out\\IMG_9198.jpg"
+  ],
+  "PostprocessAutoProcess": true,
+  "PostprocessUseGpu": true,
+  "PostprocessSelectedModelPath": "",
+  "PostprocessFiles": [
+    "C:\\PythonProgect\\CR2_bacth\\Sort\\IMG_9198.jpg"
+  ],
+  "PostprocessSelectedFiles": [],
+  "PostprocessModelSettings": {}
+}

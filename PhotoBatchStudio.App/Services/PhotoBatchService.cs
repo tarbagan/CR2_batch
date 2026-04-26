@@ -18,6 +18,7 @@ public sealed class PhotoBatchService : IPhotoBatchService
     public async Task<IReadOnlyList<string>> ProcessAsync(
         IReadOnlyList<PhotoFileItem> files,
         ProcessingSettings settings,
+        IProgress<ProcessingProgress>? progress = null,
         CancellationToken cancellationToken = default)
     {
         var log = new List<string>();
@@ -35,11 +36,18 @@ public sealed class PhotoBatchService : IPhotoBatchService
                 log.Add("External AI integration is enabled.");
             }
 
-            foreach (var file in files)
+            for (var index = 0; index < files.Count; index++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
+                var file = files[index];
                 var sourcePath = file.FullPath;
                 var extension = Path.GetExtension(sourcePath);
+                progress?.Report(new ProcessingProgress
+                {
+                    Current = index + 1,
+                    Total = files.Count,
+                    CurrentFileName = Path.GetFileName(sourcePath)
+                });
 
                 if (RawExtensions.Contains(extension))
                 {

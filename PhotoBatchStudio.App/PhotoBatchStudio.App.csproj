@@ -25,4 +25,8 @@
     <None Include="Assets\app-icon.ico" />
     <None Include="Assets\app-icon.png" />
   </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.18.1" />
+  </ItemGroup>
 </Project>
