@@ -141,6 +141,40 @@
       border-radius: 14px;
       padding: 18px 20px;
     }
+    .section {
+      margin-top: 26px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 24px;
+    }
+    .section h2 {
+      margin: 0 0 14px;
+      font-size: 24px;
+    }
+    .section h3 {
+      margin: 22px 0 10px;
+      font-size: 18px;
+    }
+    .section ul,
+    .section ol {
+      margin: 10px 0 0 20px;
+      padding: 0;
+      line-height: 1.7;
+    }
+    .section li + li {
+      margin-top: 6px;
+    }
+    .lang-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 18px;
+    }
+    .developer {
+      margin-top: 28px;
+      color: var(--muted);
+      font-size: 14px;
+    }
     code {
       background: #edf2f7;
       padding: 2px 6px;
@@ -210,6 +244,100 @@
       3. Choose the XMP preset, Out folder, and Final folder.<br>
       4. Add CR2/RAW files and click <code>Render</code>.<br>
       5. Review the JPG output and send the best files to the final folder.
+    </div>
+
+    <section class="section">
+      <h2>How It Works / Как это работает</h2>
+      <div class="lang-grid">
+        <div>
+          <h3>English</h3>
+          <p>This app is made for photographers who already work in Adobe Photoshop / Camera Raw and want to apply one prepared RAW look to many files.</p>
+          <ol>
+            <li>Start Adobe Photoshop.</li>
+            <li>Open one Canon CR2 or other RAW file.</li>
+            <li>The file opens in Camera Raw. Adjust exposure, white balance, colors, sharpness and other RAW settings.</li>
+            <li>Save these settings as an <code>XMP</code> preset or sidecar file.</li>
+            <li>Open <code>CR2RawBatchStudio.exe</code>.</li>
+            <li>Select that saved <code>XMP</code> file in the <code>XMP preset</code> field.</li>
+            <li>Select the <code>Out</code> folder for rendered JPG files.</li>
+            <li>Select the <code>Final</code> folder for selected best photos.</li>
+            <li>Add all CR2/RAW files that should be processed with the same preset.</li>
+            <li>Click <code>Render</code>. The app uses Photoshop to render RAW to JPG.</li>
+            <li>Open the <code>Review</code> tab and sort the JPG output.</li>
+            <li>Move the best images to the final folder.</li>
+          </ol>
+        </div>
+        <div>
+          <h3>Русский</h3>
+          <p>Программа сделана для фотографов, которые уже работают в Adobe Photoshop / Camera Raw и хотят применить один подготовленный RAW-пресет сразу ко многим файлам.</p>
+          <ol>
+            <li>Запустите Adobe Photoshop.</li>
+            <li>Откройте один файл Canon CR2 или другой RAW-файл.</li>
+            <li>Файл откроется в Camera Raw. Настройте экспозицию, баланс белого, цвет, резкость и другие параметры RAW.</li>
+            <li>Сохраните эти настройки как файл <code>XMP</code> или sidecar-файл.</li>
+            <li>Откройте <code>CR2RawBatchStudio.exe</code>.</li>
+            <li>В поле <code>XMP preset</code> выберите этот сохранённый <code>XMP</code>-файл.</li>
+            <li>Укажите папку <code>Out</code> для готовых JPG.</li>
+            <li>Укажите папку <code>Final</code> для лучших отобранных кадров.</li>
+            <li>Добавьте все CR2/RAW-файлы, которые нужно обработать этим же пресетом.</li>
+            <li>Нажмите <code>Render</code>. Программа использует Photoshop для рендера RAW в JPG.</li>
+            <li>Перейдите на вкладку <code>Review</code> и отсортируйте полученные JPG.</li>
+            <li>Переместите лучшие файлы в финальную папку.</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>XMP Preset / XMP-пресет</h2>
+      <div class="lang-grid">
+        <div>
+          <h3>English</h3>
+          <p>The key idea of the program is simple: you prepare one RAW look in Photoshop / Camera Raw, save it as <code>XMP</code>, and then apply that same look to the whole batch.</p>
+          <ul>
+            <li><code>XMP</code> is the settings file created from your RAW adjustments.</li>
+            <li>The app does not try to imitate Adobe rendering with third-party libraries.</li>
+            <li>Instead, it uses Adobe Photoshop so the result stays close to your normal workflow.</li>
+          </ul>
+        </div>
+        <div>
+          <h3>Русский</h3>
+          <p>Главная идея программы простая: вы вручную делаете один вариант обработки RAW в Photoshop / Camera Raw, сохраняете его как <code>XMP</code>, а затем применяете этот же вариант ко всей серии файлов.</p>
+          <ul>
+            <li><code>XMP</code> — это файл с настройками вашей RAW-обработки.</li>
+            <li>Программа не пытается имитировать Adobe-рендеринг сторонними библиотеками.</li>
+            <li>Вместо этого она использует Adobe Photoshop, чтобы результат был максимально близким к вашему обычному workflow.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Important / Важно</h2>
+      <div class="lang-grid">
+        <div>
+          <h3>English</h3>
+          <ul>
+            <li>Adobe Photoshop with Camera Raw must be installed.</li>
+            <li>It is recommended to keep Photoshop already running before batch processing.</li>
+            <li>The app is intended for CR2/RAW batch workflow, not for replacing Photoshop editing.</li>
+            <li>After rendering, use the Review tab to sort and select final JPG files.</li>
+          </ul>
+        </div>
+        <div>
+          <h3>Русский</h3>
+          <ul>
+            <li>Adobe Photoshop с Camera Raw должен быть установлен.</li>
+            <li>Перед пакетной обработкой желательно, чтобы Photoshop уже был запущен.</li>
+            <li>Программа предназначена именно для пакетного workflow с CR2/RAW, а не для замены ручной обработки в Photoshop.</li>
+            <li>После рендера используйте вкладку Review для сортировки и отбора итоговых JPG.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <div class="developer">
+      Developer / Разработчик: Иргит Валерий
     </div>
   </div>
 </body>

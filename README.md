@@ -6,6 +6,8 @@
 
 CR2(RAW) Batch Studio is a Windows app for photographers who process `Canon CR2/RAW` files in `Adobe Photoshop / Camera Raw`, save one `XMP` preset, and then batch-apply that preset to many RAW files with review and final selection.
 
+Developer / Разработчик: `Иргит Валерий`
+
 ## Features
 
 - `WPF` desktop app for Windows
@@ -48,6 +50,18 @@ The program is built around one practical workflow:
 6. Open the `Review` tab
 7. Sort the rendered `JPG` files
 8. Send selected images to the final folder
+
+## Short Meaning Of The Program
+
+The program is designed for one specific photographer workflow:
+
+1. Open one `CR2/RAW` file in `Photoshop / Camera Raw`
+2. Adjust the image manually
+3. Save that RAW setup as `XMP`
+4. Use the saved `XMP` for batch processing of many RAW files
+5. Review the rendered `JPG` files and keep only the best shots
+
+That is why `Photoshop` should be installed and preferably already running before batch rendering.
 
 ## How To Create The XMP Preset
 
