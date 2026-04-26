@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>CR2 Batch</title>
+  <title>CR2(RAW) Batch Studio</title>
   <style>
     :root {
       --bg: #f3efe7;
@@ -12,6 +12,7 @@
       --muted: #5d6977;
       --accent: #1f5d8e;
       --accent-2: #d07a2d;
+      --good: #47724f;
       --line: #d8d1c6;
       --shadow: 0 20px 60px rgba(31, 58, 95, 0.18);
     }
@@ -20,20 +21,29 @@
       margin: 0;
       font-family: "Segoe UI", sans-serif;
       color: var(--ink);
-      background:
-        radial-gradient(circle at top left, #ffffff 0, #f7f2e9 30%, var(--bg) 100%);
+      background: radial-gradient(circle at top left, #ffffff 0, #f7f2e9 30%, var(--bg) 100%);
     }
     .wrap {
-      max-width: 1080px;
+      max-width: 1120px;
       margin: 0 auto;
       padding: 48px 20px 72px;
     }
     .hero {
+      display: grid;
+      grid-template-columns: 104px 1fr;
+      gap: 24px;
+      align-items: center;
       background: linear-gradient(135deg, #1f3a5f, #2c6996);
       color: white;
       border-radius: 28px;
       padding: 36px;
       box-shadow: var(--shadow);
+    }
+    .hero img {
+      width: 104px;
+      height: 104px;
+      border-radius: 24px;
+      box-shadow: 0 12px 32px rgba(0,0,0,.18);
     }
     .eyebrow {
       letter-spacing: 0.14em;
@@ -69,9 +79,7 @@
       font-weight: 700;
       transition: transform .12s ease;
     }
-    .button:hover {
-      transform: translateY(-1px);
-    }
+    .button:hover { transform: translateY(-1px); }
     .button.primary {
       background: white;
       color: #17324f;
@@ -125,52 +133,74 @@
       display: block;
       margin-bottom: 8px;
     }
+    .note {
+      margin-top: 20px;
+      background: #eef6ee;
+      border: 1px solid #c7dec9;
+      border-left: 4px solid var(--good);
+      border-radius: 14px;
+      padding: 18px 20px;
+    }
     code {
       background: #edf2f7;
       padding: 2px 6px;
       border-radius: 6px;
+    }
+    @media (max-width: 760px) {
+      .hero {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
 <body>
   <div class="wrap">
     <section class="hero">
-      <div class="eyebrow">Windows RAW Workflow</div>
-      <h1>CR2 Batch</h1>
-      <p class="lead">Batch process CR2 and other photo files, apply Adobe XMP presets, and render RAW to JPG through Adobe Photoshop for output that stays aligned with the Adobe workflow.</p>
-      <div class="meta">
-        <span class="chip">Release v1.0.0</span>
-        <span class="chip">Windows x64</span>
-        <span class="chip">.NET 8 WPF</span>
-      </div>
-      <div class="actions">
-        <a class="button primary" href="./downloads/CR2-Batch-v1.0.0-win-x64.zip">Download ZIP</a>
-        <a class="button secondary" href="https://github.com/tarbagan/CR2_batch">View Source</a>
+      <img src="./downloads/app-icon.png" alt="CR2(RAW) Batch Studio icon">
+      <div>
+        <div class="eyebrow">Windows RAW Workflow</div>
+        <h1>CR2(RAW) Batch Studio</h1>
+        <p class="lead">Batch process CR2 and other RAW photo files, apply Adobe XMP presets, render through Adobe Photoshop, review JPG output, and move final picks into a delivery folder.</p>
+        <div class="meta">
+          <span class="chip">Release v1.1.0</span>
+          <span class="chip">Windows x64</span>
+          <span class="chip">.NET 8 WPF</span>
+          <span class="chip">Adobe XMP / Photoshop</span>
+        </div>
+        <div class="actions">
+          <a class="button primary" href="./downloads/CR2-RAW-Batch-Studio-v1.1.0-win-x64.zip">Download ZIP</a>
+          <a class="button secondary" href="https://github.com/tarbagan/CR2_batch">View Source</a>
+        </div>
       </div>
     </section>
 
     <section class="grid">
       <article class="card">
-        <h2>Batch Queue</h2>
-        <p>Add files or folders, build a processing queue, and export multiple jobs in one pass.</p>
+        <h2>CR2 / RAW Batch</h2>
+        <p>Add files or folders, build a queue, and process multiple RAW jobs in one pass.</p>
       </article>
       <article class="card">
-        <h2>Adobe XMP</h2>
-        <p>Select XMP presets created in Adobe Photoshop or Camera Raw and apply them in a compatible workflow.</p>
+        <h2>Adobe XMP Workflow</h2>
+        <p>Use XMP presets created in Adobe Camera Raw or Photoshop instead of trying to imitate Adobe processing.</p>
       </article>
       <article class="card">
-        <h2>Photoshop Render</h2>
-        <p>RAW rendering uses Adobe Photoshop automation instead of trying to approximate the Adobe engine.</p>
+        <h2>Review And Final Pick</h2>
+        <p>Sort JPG files, zoom with the mouse wheel, drag the image in preview, and send final shots to a delivery folder.</p>
       </article>
       <article class="card">
-        <h2>Windows App</h2>
-        <p>Visual Studio solution included: <code>PhotoBatchStudio.sln</code>.</p>
+        <h2>Portable Or Install</h2>
+        <p>The package includes both the ready-to-run app files and a local installer script with Start menu and desktop shortcuts.</p>
       </article>
     </section>
 
     <div class="release">
       <strong>Requirements</strong>
-      Adobe Photoshop with Camera Raw must be installed on the Windows machine for <code>CR2 + XMP -&gt; JPG</code> rendering.
+      Adobe Photoshop with Camera Raw must be installed for <code>CR2 + XMP -&gt; JPG</code> rendering through the Adobe engine.
+    </div>
+
+    <div class="note">
+      <strong>About the Windows warning</strong>
+      Windows SmartScreen can still show an unknown publisher warning even with icon and product metadata. To fully remove that warning, the installer/app must be signed with a trusted <code>code signing certificate</code>.
     </div>
   </div>
 </body>

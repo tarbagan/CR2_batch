@@ -3,18 +3,23 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:PhotoBatchStudio.App.ViewModels"
         mc:Ignorable="d"
-        Title="Photo Batch Studio"
-        Width="1180"
-        Height="760"
-        MinWidth="1000"
-        MinHeight="680"
+        Title="{Binding WindowTitle}"
+        Width="1500"
+        Height="960"
+        MinWidth="1240"
+        MinHeight="780"
         Background="#F4F1EA">
+    <Window.Resources>
+        <vm:BooleanToVisibilityExConverter x:Key="BoolToVisibilityEx" />
+    </Window.Resources>
+
     <Grid Margin="18">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
-            <RowDefinition Height="220" />
+            <RowDefinition Height="180" />
         </Grid.RowDefinitions>
 
         <Border Grid.Row="0"
@@ -23,150 +28,612 @@
                 CornerRadius="18"
                 Background="#1F3A5F">
             <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
 
-                <StackPanel>
-                    <TextBlock Text="Photo Batch Studio"
-                               FontSize="28"
-                               FontWeight="SemiBold"
-                               Foreground="White" />
-                    <TextBlock Margin="0,8,0,0"
-                               Text="Windows desktop foundation for CR2 sidecar XMP, batch export, metadata and future AI deblur."
-                               Foreground="#DDE7F3"
-                               TextWrapping="Wrap" />
-                </StackPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
 
-                <StackPanel Grid.Column="1"
-                            Orientation="Horizontal"
-                            VerticalAlignment="Bottom">
-                    <Button Content="Add Files"
-                            Padding="16,8"
-                            Margin="0,0,8,0"
-                            Command="{Binding AddFilesCommand}" />
-                    <Button Content="Add Folder"
-                            Padding="16,8"
-                            Margin="0,0,8,0"
-                            Command="{Binding AddFolderCommand}" />
-                    <Button Content="Start Batch"
-                            Padding="16,8"
-                            Command="{Binding StartProcessingCommand}" />
-                </StackPanel>
+                    <StackPanel>
+                        <TextBlock Text="{Binding AppTitle}"
+                                   FontSize="30"
+                                   FontWeight="SemiBold"
+                                   Foreground="White" />
+                        <TextBlock Margin="0,8,0,0"
+                                   Text="{Binding AppSubtitle}"
+                                   Foreground="#DDE7F3"
+                                   TextWrapping="Wrap" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1"
+                                VerticalAlignment="Bottom"
+                                Margin="16,0,0,0">
+                        <WrapPanel HorizontalAlignment="Right">
+                            <Border Padding="10"
+                                    Margin="0,0,10,8"
+                                    CornerRadius="12"
+                                    Background="#315986">
+                                <StackPanel>
+                                    <TextBlock Margin="0,0,0,8"
+                                               FontSize="11"
+                                               Foreground="#DDE7F3"
+                                               Text="1. Project" />
+                                    <WrapPanel>
+                                        <Button Content="{Binding NewProjectText}"
+                                                Padding="14,8"
+                                                Margin="0,0,8,0"
+                                                Command="{Binding NewProjectCommand}" />
+                                        <Button Content="{Binding SaveProjectText}"
+                                                Padding="14,8"
+                                                Margin="0,0,8,0"
+                                                Command="{Binding SaveProjectCommand}" />
+                                        <Button Content="{Binding LoadProjectText}"
+                                                Padding="14,8"
+                                                Command="{Binding LoadProjectCommand}" />
+                                    </WrapPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Padding="10"
+                                    Margin="0,0,10,8"
+                                    CornerRadius="12"
+                                    Background="#315986">
+                                <StackPanel>
+                                    <TextBlock Margin="0,0,0,8"
+                                               FontSize="11"
+                                               Foreground="#DDE7F3"
+                                               Text="2. Source Queue" />
+                                    <WrapPanel>
+                                        <Button Content="{Binding AddFilesText}"
+                                                Padding="14,8"
+                                                Margin="0,0,8,0"
+                                                Command="{Binding AddFilesCommand}" />
+                                        <Button Content="{Binding AddFolderText}"
+                                                Padding="14,8"
+                                                Margin="0,0,8,0"
+                                                Command="{Binding AddFolderCommand}" />
+                                        <Button Content="{Binding RemoveSelectedText}"
+                                                Padding="14,8"
+                                                Margin="0,0,8,0"
+                                                Command="{Binding RemoveSelectedCommand}" />
+                                        <Button Content="{Binding ClearListText}"
+                                                Padding="14,8"
+                                                Command="{Binding ClearListCommand}" />
+                                    </WrapPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Padding="10"
+                                    Margin="0,0,10,8"
+                                    CornerRadius="12"
+                                    Background="#3D6A3F">
+                                <StackPanel>
+                                    <TextBlock Margin="0,0,0,8"
+                                               FontSize="11"
+                                               Foreground="#E4F2E5"
+                                               Text="3. Render" />
+                                    <Button Content="{Binding StartBatchText}"
+                                            Padding="18,8"
+                                            Command="{Binding StartProcessingCommand}" />
+                                </StackPanel>
+                            </Border>
+
+                            <Button Width="42"
+                                    Height="40"
+                                    Margin="0,0,0,8"
+                                    FontSize="18"
+                                    Content="&#x2699;"
+                                    ToolTip="{Binding SettingsTitleText}"
+                                    Command="{Binding ToggleSettingsCommand}" />
+                        </WrapPanel>
+                    </StackPanel>
+                </Grid>
+
+                <Grid Grid.Row="1"
+                      Margin="0,18,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Border Padding="12"
+                            CornerRadius="14"
+                            Background="#2A4B76">
+                        <StackPanel>
+                            <TextBlock Text="{Binding XmpPresetText}"
+                                       FontWeight="SemiBold"
+                                       Foreground="White"
+                                       ToolTip="{Binding XmpPresetTooltip}" />
+                            <DockPanel Margin="0,8,0,0">
+                                <Button DockPanel.Dock="Right"
+                                        Margin="8,0,0,0"
+                                        Padding="12,6"
+                                        Content="{Binding BrowseText}"
+                                        ToolTip="{Binding XmpPresetTooltip}"
+                                        Command="{Binding BrowsePresetCommand}" />
+                                <TextBox Text="{Binding XmpPresetPath, UpdateSourceTrigger=PropertyChanged}"
+                                         ToolTip="{Binding XmpPresetTooltip}"
+                                         Background="#F7F4EE" />
+                            </DockPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="2"
+                            Padding="12"
+                            CornerRadius="14"
+                            Background="#2A4B76">
+                        <StackPanel>
+                            <TextBlock Text="{Binding OutputFolderText}"
+                                       FontWeight="SemiBold"
+                                       Foreground="White"
+                                       ToolTip="{Binding OutputFolderTooltip}" />
+                            <DockPanel Margin="0,8,0,0">
+                                <Button DockPanel.Dock="Right"
+                                        Margin="8,0,0,0"
+                                        Padding="12,6"
+                                        Content="{Binding BrowseText}"
+                                        ToolTip="{Binding OutputFolderTooltip}"
+                                        Command="{Binding BrowseOutputCommand}" />
+                                <TextBox Text="{Binding OutputFolder, UpdateSourceTrigger=PropertyChanged}"
+                                         ToolTip="{Binding OutputFolderTooltip}"
+                                         Background="#F7F4EE" />
+                            </DockPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="4"
+                            Padding="12"
+                            CornerRadius="14"
+                            Background="#2A4B76">
+                        <StackPanel>
+                            <TextBlock Text="{Binding FinalFolderText}"
+                                       FontWeight="SemiBold"
+                                       Foreground="White"
+                                       ToolTip="{Binding FinalFolderTooltip}" />
+                            <DockPanel Margin="0,8,0,0">
+                                <Button DockPanel.Dock="Right"
+                                        Margin="8,0,0,0"
+                                        Padding="12,6"
+                                        Content="{Binding BrowseText}"
+                                        ToolTip="{Binding FinalFolderTooltip}"
+                                        Command="{Binding BrowseFinalFolderCommand}" />
+                                <TextBox Text="{Binding FinalFolder, UpdateSourceTrigger=PropertyChanged}"
+                                         ToolTip="{Binding FinalFolderTooltip}"
+                                         Background="#F7F4EE" />
+                            </DockPanel>
+                        </StackPanel>
+                    </Border>
+                </Grid>
             </Grid>
         </Border>
 
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="1.4*" />
-                <ColumnDefinition Width="20" />
-                <ColumnDefinition Width="1*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="360" />
             </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
 
-            <Border Padding="14"
-                    CornerRadius="16"
-                    Background="White">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
+            <TabControl Grid.Column="0"
+                        Margin="0,0,16,16">
+                <TabItem Header="{Binding QueueTabText}">
+                    <Border Padding="14"
+                            CornerRadius="16"
+                            Background="White">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
 
-                    <TextBlock Text="Batch Queue"
-                               FontSize="20"
-                               FontWeight="SemiBold"
-                               Foreground="#2C2C2C" />
+                            <TextBlock Text="{Binding BatchQueueText}"
+                                       FontSize="20"
+                                       FontWeight="SemiBold"
+                                       Foreground="#2C2C2C" />
 
-                    <DataGrid Grid.Row="1"
-                              Margin="0,12,0,12"
-                              AutoGenerateColumns="False"
-                              CanUserAddRows="False"
-                              IsReadOnly="True"
-                              ItemsSource="{Binding Files}">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Name"
-                                                Width="220"
-                                                Binding="{Binding Name}" />
-                            <DataGridTextColumn Header="Folder"
-                                                Width="*"
-                                                Binding="{Binding DirectoryPath}" />
-                            <DataGridTextColumn Header="Type"
-                                                Width="90"
-                                                Binding="{Binding FileType}" />
-                            <DataGridTextColumn Header="Status"
-                                                Width="140"
-                                                Binding="{Binding Status}" />
-                        </DataGrid.Columns>
-                    </DataGrid>
+                            <Border Grid.Row="1"
+                                    Margin="0,12,0,12"
+                                    Padding="12"
+                                    CornerRadius="12"
+                                    Background="#F7F4EE">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
 
-                    <TextBlock Grid.Row="2"
-                               Text="{Binding Summary}"
-                               Foreground="#6A6A6A" />
-                </Grid>
-            </Border>
+                                    <TextBlock Text="{Binding QueueProgressText}"
+                                               FontWeight="SemiBold"
+                                               Foreground="#2C2C2C" />
+                                    <StackPanel Grid.Row="1"
+                                                Margin="0,8,0,0">
+                                        <ProgressBar Height="18"
+                                                     Minimum="0"
+                                                     Maximum="{Binding ProcessingProgressMaximum}"
+                                                     Value="{Binding ProcessingProgressValue}" />
+                                        <TextBlock Margin="0,8,0,0"
+                                                   Foreground="#6A6A6A"
+                                                   Text="{Binding ProcessingProgressText}" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
 
-            <Border Grid.Column="2"
+                            <DataGrid Grid.Row="2"
+                                      AutoGenerateColumns="False"
+                                      CanUserAddRows="False"
+                                      IsReadOnly="True"
+                                      SelectedItem="{Binding SelectedFile, Mode=TwoWay}"
+                                      ItemsSource="{Binding Files}">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="{Binding DataContext.NameColumnText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                        Width="220"
+                                                        Binding="{Binding Name}" />
+                                    <DataGridTextColumn Header="{Binding DataContext.FolderColumnText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                        Width="*"
+                                                        Binding="{Binding DirectoryPath}" />
+                                    <DataGridTextColumn Header="{Binding DataContext.TypeColumnText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                        Width="90"
+                                                        Binding="{Binding FileType}" />
+                                    <DataGridTextColumn Header="{Binding DataContext.StatusColumnText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                        Width="140"
+                                                        Binding="{Binding Status}" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+
+                            <TextBlock Grid.Row="3"
+                                       Margin="0,12,0,0"
+                                       Text="{Binding Summary}"
+                                       Foreground="#6A6A6A" />
+                        </Grid>
+                    </Border>
+                </TabItem>
+
+                <TabItem Header="{Binding ReviewTabText}">
+                    <Grid Margin="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1.1*" />
+                            <ColumnDefinition Width="16" />
+                            <ColumnDefinition Width="1.5*" />
+                            <ColumnDefinition Width="16" />
+                            <ColumnDefinition Width="0.8*" />
+                        </Grid.ColumnDefinitions>
+
+                        <Border Padding="14"
+                                CornerRadius="16"
+                                Background="#FCFBF8">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+
+                                <StackPanel>
+                                    <TextBlock Text="{Binding ReviewPanelText}"
+                                               FontSize="20"
+                                               FontWeight="SemiBold"
+                                               Foreground="#2C2C2C" />
+
+                                    <DockPanel Margin="0,12,0,0">
+                                        <Button DockPanel.Dock="Right"
+                                                Padding="12,6"
+                                                Content="{Binding BrowseText}"
+                                                Command="{Binding BrowseSortFolderCommand}" />
+                                        <TextBox Margin="0,0,8,0"
+                                                 Text="{Binding SortFolder, UpdateSourceTrigger=PropertyChanged}" />
+                                    </DockPanel>
+
+                                    <TextBlock Margin="0,6,0,0"
+                                               Foreground="#6A6A6A"
+                                               TextWrapping="Wrap"
+                                               Text="{Binding SortFolderHintText}" />
+
+                                    <WrapPanel Margin="0,12,0,0">
+                                        <Button Content="{Binding LoadJpgsText}"
+                                                Padding="12,6"
+                                                Margin="0,0,8,8"
+                                                Command="{Binding LoadSortPhotosCommand}" />
+                                        <Button Content="{Binding RefreshListText}"
+                                                Padding="12,6"
+                                                Margin="0,0,8,8"
+                                                ToolTip="{Binding RefreshListTooltip}"
+                                                Command="{Binding RefreshSortPhotosCommand}" />
+                                        <Button Content="{Binding OpenFolderText}"
+                                                Padding="12,6"
+                                                Margin="0,0,8,8"
+                                                Command="{Binding OpenSortFolderCommand}" />
+                                    </WrapPanel>
+
+                                    <WrapPanel Margin="0,4,0,0">
+                                        <Button Content="{Binding KeepText}"
+                                                Padding="12,6"
+                                                Margin="0,0,8,8"
+                                                Command="{Binding MarkCurrentForFinalCommand}" />
+                                        <Button Content="{Binding UnkeepText}"
+                                                Padding="12,6"
+                                                Margin="0,0,8,8"
+                                                Command="{Binding UnmarkCurrentForFinalCommand}" />
+                                        <Button Content="{Binding RemoveFromReviewText}"
+                                                Padding="12,6"
+                                                Margin="0,0,8,8"
+                                                Command="{Binding DeleteSelectedSortPhotosCommand}" />
+                                    </WrapPanel>
+
+                                    <WrapPanel Margin="0,4,0,0">
+                                        <Button Content="{Binding SelectAllText}"
+                                                Padding="12,6"
+                                                Margin="0,0,8,8"
+                                                Command="{Binding SelectAllSortPhotosCommand}" />
+                                        <Button Content="{Binding ClearSelectionText}"
+                                                Padding="12,6"
+                                                Margin="0,0,16,8"
+                                                Command="{Binding ClearSortSelectionCommand}" />
+                                        <TextBlock VerticalAlignment="Center"
+                                                   Margin="0,0,8,8"
+                                                   Text="{Binding SortModeText}" />
+                                        <ComboBox Width="180"
+                                                  Margin="0,0,12,8"
+                                                  SelectedValuePath="Value"
+                                                  DisplayMemberPath="Label"
+                                                  SelectedValue="{Binding SortMode, UpdateSourceTrigger=PropertyChanged}"
+                                                  ItemsSource="{Binding SortModes}" />
+                                        <TextBlock VerticalAlignment="Center"
+                                                   Margin="0,0,0,8"
+                                                   Text="{Binding ReviewSelectionText}" />
+                                    </WrapPanel>
+
+                                    <TextBlock Margin="0,4,0,0"
+                                               Text="{Binding FinalSelectionCountText}"
+                                               Foreground="#6A6A6A" />
+
+                                    <Border Margin="0,14,0,0"
+                                            Padding="12"
+                                            CornerRadius="12"
+                                            Background="#E6F0E4"
+                                            BorderBrush="#B9D0B5"
+                                            BorderThickness="1">
+                                        <StackPanel>
+                                            <TextBlock FontWeight="SemiBold"
+                                                       Foreground="#29522C"
+                                                       Text="4. Final Output" />
+                                            <TextBlock Margin="0,6,0,10"
+                                                       Foreground="#527255"
+                                                       TextWrapping="Wrap"
+                                                       Text="{Binding FinalFolder}" />
+                                            <Button Content="{Binding SendToFinalText}"
+                                                    Padding="16,8"
+                                                    HorizontalAlignment="Left"
+                                                    ToolTip="{Binding SendToFinalTooltip}"
+                                                    Command="{Binding SendToFinalFolderCommand}" />
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+
+                                <ListBox x:Name="SortListBox"
+                                         Grid.Row="1"
+                                         Margin="0,12,0,0"
+                                         BorderThickness="0"
+                                         SelectionMode="Extended"
+                                         SelectedItem="{Binding SelectedSortPhoto, Mode=TwoWay}"
+                                         SelectionChanged="SortListBox_OnSelectionChanged"
+                                         PreviewKeyDown="SortListBox_OnPreviewKeyDown"
+                                         ItemsSource="{Binding SortPhotos}">
+                                    <ListBox.ContextMenu>
+                                        <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                                            <MenuItem Header="{Binding RemoveFromReviewText}"
+                                                      Command="{Binding DeleteSelectedSortPhotosCommand}" />
+                                        </ContextMenu>
+                                    </ListBox.ContextMenu>
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Margin="0,0,0,8"
+                                                    Padding="10"
+                                                    CornerRadius="12"
+                                                    Background="White"
+                                                    BorderBrush="#E2DDD5"
+                                                    BorderThickness="1">
+                                                <DockPanel>
+                                                    <CheckBox IsChecked="{Binding IsSelectedForFinal, Mode=TwoWay}"
+                                                              VerticalAlignment="Center"
+                                                              Margin="0,0,8,0" />
+                                                    <Image Width="72"
+                                                           Height="72"
+                                                           Margin="0,0,10,0"
+                                                           Source="{Binding Thumbnail}"
+                                                           Stretch="UniformToFill" />
+                                                    <StackPanel>
+                                                        <TextBlock FontWeight="SemiBold"
+                                                                   Text="{Binding FileName}" />
+                                                        <TextBlock FontSize="11"
+                                                                   Foreground="#7A7A7A"
+                                                                   Text="{Binding DirectoryPath}" />
+                                                    </StackPanel>
+                                                </DockPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </Grid>
+                        </Border>
+
+                        <Border Grid.Column="2"
+                                Padding="14"
+                                CornerRadius="16"
+                                Background="#FFFFFF">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Text="{Binding PreviewText}"
+                                           FontSize="20"
+                                           FontWeight="SemiBold"
+                                           Foreground="#2C2C2C" />
+
+                                <StackPanel Grid.Row="1"
+                                            Orientation="Horizontal"
+                                            Margin="0,12,0,12">
+                                    <TextBlock VerticalAlignment="Center"
+                                               Text="{Binding ZoomText}" />
+                                    <Slider Width="220"
+                                            Margin="8,0,0,0"
+                                            Minimum="0.25"
+                                            Maximum="6"
+                                            SmallChange="0.05"
+                                            LargeChange="0.25"
+                                            Value="{Binding PreviewZoom, Mode=TwoWay}" />
+                                </StackPanel>
+
+                                <Border Grid.Row="2"
+                                        Background="#F7F4EE"
+                                        CornerRadius="12"
+                                        ClipToBounds="True">
+                                    <ScrollViewer x:Name="PreviewScrollViewer"
+                                                  HorizontalScrollBarVisibility="Auto"
+                                                  VerticalScrollBarVisibility="Auto"
+                                                  SizeChanged="PreviewScrollViewer_OnSizeChanged"
+                                                  PreviewMouseWheel="PreviewScrollViewer_OnPreviewMouseWheel"
+                                                  PreviewMouseLeftButtonDown="PreviewScrollViewer_OnPreviewMouseLeftButtonDown"
+                                                  PreviewMouseMove="PreviewScrollViewer_OnPreviewMouseMove"
+                                                  PreviewMouseLeftButtonUp="PreviewScrollViewer_OnPreviewMouseLeftButtonUp"
+                                                  MouseLeave="PreviewScrollViewer_OnPreviewMouseLeave"
+                                                  CanContentScroll="False">
+                                        <Grid>
+                                            <Image Source="{Binding SelectedPreviewImage}"
+                                                   Stretch="Fill"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"
+                                                   Width="{Binding PreviewDisplayWidth}"
+                                                   Height="{Binding PreviewDisplayHeight}"
+                                                   Cursor="Hand"
+                                                   SnapsToDevicePixels="True"
+                                                   RenderOptions.BitmapScalingMode="HighQuality" />
+                                        </Grid>
+                                    </ScrollViewer>
+                                </Border>
+                            </Grid>
+                        </Border>
+
+                        <Border Grid.Column="4"
+                                Padding="14"
+                                CornerRadius="16"
+                                Background="#FFFFFF">
+                            <StackPanel>
+                                <TextBlock Text="{Binding SelectedPreviewName}"
+                                           FontSize="20"
+                                           FontWeight="SemiBold"
+                                           TextWrapping="Wrap"
+                                           Foreground="#2C2C2C" />
+                                <TextBlock Margin="0,12,0,0"
+                                           Text="{Binding ReviewSelectionText}"
+                                           Foreground="#6A6A6A" />
+                                <TextBlock Margin="0,8,0,0"
+                                           Text="{Binding FinalSelectionCountText}"
+                                           Foreground="#6A6A6A" />
+                                <TextBlock Margin="0,18,0,6"
+                                           FontWeight="SemiBold"
+                                           Text="{Binding SortFolderText}" />
+                                <TextBlock Text="{Binding EffectiveSortFolder}"
+                                           TextWrapping="Wrap" />
+                                <TextBlock Margin="0,18,0,6"
+                                           FontWeight="SemiBold"
+                                           Text="{Binding FinalFolderText}" />
+                                <TextBlock Text="{Binding FinalFolder}"
+                                           TextWrapping="Wrap" />
+                                <TextBlock Margin="0,18,0,0"
+                                           TextWrapping="Wrap"
+                                           Foreground="#6A6A6A"
+                                           Text="AI/social actions should be done only after final selection." />
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </TabItem>
+            </TabControl>
+
+            <Border Grid.Column="1"
                     Padding="14"
                     CornerRadius="16"
-                    Background="#FCFBF8">
+                    Background="#FCFBF8"
+                    Visibility="{Binding ShowSettings, Converter={StaticResource BoolToVisibilityEx}}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
-                        <TextBlock Text="Processing Settings"
-                                   FontSize="20"
-                                   FontWeight="SemiBold"
-                                   Foreground="#2C2C2C" />
-
-                        <TextBlock Margin="0,16,0,4" Text="XMP preset" />
                         <DockPanel>
-                            <TextBox Text="{Binding XmpPresetPath, UpdateSourceTrigger=PropertyChanged}" />
-                            <Button Margin="8,0,0,0"
-                                    Padding="14,6"
-                                    Content="Browse"
-                                    Command="{Binding BrowsePresetCommand}" />
+                            <TextBlock Text="{Binding SettingsTitleText}"
+                                       FontSize="20"
+                                       FontWeight="SemiBold"
+                                       Foreground="#2C2C2C" />
+                            <Button DockPanel.Dock="Right"
+                                    Content="{Binding CloseSettingsText}"
+                                    Padding="10,6"
+                                    Command="{Binding ToggleSettingsCommand}" />
                         </DockPanel>
 
-                        <TextBlock Margin="0,12,0,4" Text="Output folder" />
-                        <DockPanel>
-                            <TextBox Text="{Binding OutputFolder, UpdateSourceTrigger=PropertyChanged}" />
-                            <Button Margin="8,0,0,0"
-                                    Padding="14,6"
-                                    Content="Browse"
-                                    Command="{Binding BrowseOutputCommand}" />
-                        </DockPanel>
+                        <TextBlock Margin="0,16,0,4"
+                                   Text="{Binding LanguageText}" />
+                        <StackPanel Orientation="Horizontal">
+                            <Button Content="RU"
+                                    Padding="12,6"
+                                    Margin="0,0,8,0"
+                                    Command="{Binding SwitchToRussianCommand}" />
+                            <Button Content="EN"
+                                    Padding="12,6"
+                                    Command="{Binding SwitchToEnglishCommand}" />
+                        </StackPanel>
 
-                        <TextBlock Margin="0,12,0,4" Text="JPG description" />
+                        <TextBlock Margin="0,16,0,4"
+                                   Text="{Binding JpegDescriptionText}" />
                         <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}" />
 
-                        <TextBlock Margin="0,12,0,4" Text="External AI command" />
+                        <TextBlock Margin="0,12,0,4"
+                                   Text="{Binding ExternalAiCommandText}" />
                         <TextBox Text="{Binding ExternalAiCommand, UpdateSourceTrigger=PropertyChanged}"
-                                 ToolTip="Example: realesrgan-ncnn-vulkan.exe -i {input} -o {output}" />
+                                 ToolTip="{Binding ExternalAiCommandTooltip}" />
 
-                        <TextBlock Margin="0,12,0,4" Text="Blur threshold" />
+                        <TextBlock Margin="0,12,0,4"
+                                   Text="{Binding BlurThresholdText}" />
                         <TextBox Text="{Binding BlurThreshold, UpdateSourceTrigger=PropertyChanged}" />
 
-                        <TextBlock Margin="0,12,0,4" Text="JPEG quality" />
+                        <TextBlock Margin="0,12,0,4"
+                                   Text="{Binding JpegQualityText}" />
                         <TextBox Text="{Binding JpegQuality, UpdateSourceTrigger=PropertyChanged}" />
 
                         <CheckBox Margin="0,14,0,0"
-                                  Content="Scan folders recursively"
+                                  Content="{Binding RecursiveText}"
                                   IsChecked="{Binding Recursive}" />
                         <CheckBox Margin="0,8,0,0"
-                                  Content="Overwrite existing XMP sidecars"
+                                  Content="{Binding OverwriteXmpText}"
                                   IsChecked="{Binding OverwriteXmp}" />
                         <CheckBox Margin="0,8,0,0"
-                                  Content="Detect blur automatically"
+                                  Content="{Binding DetectBlurText}"
                                   IsChecked="{Binding DetectBlur}" />
                         <CheckBox Margin="0,8,0,0"
-                                  Content="Auto-fix blurry raster images"
+                                  Content="{Binding AutoFixBlurText}"
                                   IsChecked="{Binding AutoFixBlur}" />
                         <CheckBox Margin="0,8,0,0"
-                                  Content="Render RAW to JPG via Adobe Photoshop"
+                                  Content="{Binding RenderRawText}"
                                   IsChecked="{Binding RenderRawWithPhotoshop}" />
                         <CheckBox Margin="0,8,0,0"
-                                  Content="Use external AI command"
+                                  Content="{Binding UseExternalAiText}"
                                   IsChecked="{Binding UseExternalAi}" />
+
+                        <TextBlock Margin="0,16,0,4"
+                                   Text="{Binding CurrentProjectText}" />
+                        <TextBlock Text="{Binding CurrentProjectPath}"
+                                   TextWrapping="Wrap"
+                                   Foreground="#6A6A6A" />
                     </StackPanel>
                 </ScrollViewer>
             </Border>
@@ -183,7 +650,7 @@
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
-                <TextBlock Text="Processing Log"
+                <TextBlock Text="{Binding ProcessingLogText}"
                            FontSize="20"
                            FontWeight="SemiBold"
                            Foreground="#2C2C2C" />
