@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -9,9 +9,11 @@
       --bg: #f3efe7;
       --panel: #fffdf8;
       --ink: #1d2a38;
+      --muted: #5d6977;
       --accent: #1f5d8e;
       --accent-2: #d07a2d;
       --line: #d8d1c6;
+      --shadow: 0 20px 60px rgba(31, 58, 95, 0.18);
     }
     * { box-sizing: border-box; }
     body {
@@ -22,24 +24,36 @@
         radial-gradient(circle at top left, #ffffff 0, #f7f2e9 30%, var(--bg) 100%);
     }
     .wrap {
-      max-width: 960px;
+      max-width: 1080px;
       margin: 0 auto;
-      padding: 48px 20px 64px;
+      padding: 48px 20px 72px;
     }
     .hero {
       background: linear-gradient(135deg, #1f3a5f, #2c6996);
       color: white;
-      border-radius: 24px;
-      padding: 32px;
-      box-shadow: 0 20px 60px rgba(31, 58, 95, 0.18);
+      border-radius: 28px;
+      padding: 36px;
+      box-shadow: var(--shadow);
+    }
+    .eyebrow {
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      font-size: 12px;
+      opacity: 0.8;
     }
     h1 {
-      margin: 0 0 12px;
-      font-size: 40px;
-      line-height: 1.1;
+      margin: 10px 0 12px;
+      font-size: 44px;
+      line-height: 1.05;
     }
     p {
-      line-height: 1.6;
+      line-height: 1.65;
+      margin: 0;
+    }
+    .lead {
+      max-width: 760px;
+      color: #e7eef7;
+      font-size: 18px;
     }
     .actions {
       display: flex;
@@ -50,9 +64,13 @@
     .button {
       display: inline-block;
       text-decoration: none;
-      padding: 14px 18px;
-      border-radius: 12px;
-      font-weight: 600;
+      padding: 14px 20px;
+      border-radius: 14px;
+      font-weight: 700;
+      transition: transform .12s ease;
+    }
+    .button:hover {
+      transform: translateY(-1px);
     }
     .button.primary {
       background: white;
@@ -63,24 +81,49 @@
       color: white;
       border: 1px solid rgba(255,255,255,0.24);
     }
+    .meta {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+    }
+    .chip {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.16);
+      font-size: 13px;
+    }
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
       gap: 16px;
       margin-top: 24px;
     }
     .card {
       background: var(--panel);
       border: 1px solid var(--line);
-      border-radius: 18px;
-      padding: 20px;
+      border-radius: 20px;
+      padding: 22px;
     }
-    .note {
-      margin-top: 24px;
-      padding: 18px 20px;
-      border-left: 4px solid var(--accent-2);
+    .card h2 {
+      margin: 0 0 10px;
+      font-size: 20px;
+    }
+    .card p {
+      color: var(--muted);
+    }
+    .release {
+      margin-top: 26px;
       background: #fff8ef;
-      border-radius: 12px;
+      border: 1px solid #f1d7bb;
+      border-left: 4px solid var(--accent-2);
+      border-radius: 14px;
+      padding: 18px 20px;
+    }
+    .release strong {
+      display: block;
+      margin-bottom: 8px;
     }
     code {
       background: #edf2f7;
@@ -92,31 +135,42 @@
 <body>
   <div class="wrap">
     <section class="hero">
+      <div class="eyebrow">Windows RAW Workflow</div>
       <h1>CR2 Batch</h1>
-      <p>Windows-приложение для пакетной обработки фотографий, применения Adobe XMP и экспорта RAW в JPG через Adobe Photoshop.</p>
+      <p class="lead">Batch process CR2 and other photo files, apply Adobe XMP presets, and render RAW to JPG through Adobe Photoshop for output that stays aligned with the Adobe workflow.</p>
+      <div class="meta">
+        <span class="chip">Release v1.0.0</span>
+        <span class="chip">Windows x64</span>
+        <span class="chip">.NET 8 WPF</span>
+      </div>
       <div class="actions">
-        <a class="button primary" href="./downloads/PhotoBatchStudio-win-x64.zip">Скачать Windows ZIP</a>
-        <a class="button secondary" href="https://github.com/tarbagan/CR2_batch">Открыть GitHub</a>
+        <a class="button primary" href="./downloads/CR2-Batch-v1.0.0-win-x64.zip">Download ZIP</a>
+        <a class="button secondary" href="https://github.com/tarbagan/CR2_batch">View Source</a>
       </div>
     </section>
 
     <section class="grid">
       <article class="card">
-        <h2>Что умеет</h2>
-        <p>Пакетная очередь, выбор папок, применение XMP, экспорт JPG и подготовка к AI-обработке.</p>
+        <h2>Batch Queue</h2>
+        <p>Add files or folders, build a processing queue, and export multiple jobs in one pass.</p>
       </article>
       <article class="card">
-        <h2>Adobe workflow</h2>
-        <p>Для совпадения с Photoshop используется открытие RAW через Adobe Photoshop + Camera Raw.</p>
+        <h2>Adobe XMP</h2>
+        <p>Select XMP presets created in Adobe Photoshop or Camera Raw and apply them in a compatible workflow.</p>
       </article>
       <article class="card">
-        <h2>Visual Studio</h2>
-        <p>Исходники доступны в solution <code>PhotoBatchStudio.sln</code>.</p>
+        <h2>Photoshop Render</h2>
+        <p>RAW rendering uses Adobe Photoshop automation instead of trying to approximate the Adobe engine.</p>
+      </article>
+      <article class="card">
+        <h2>Windows App</h2>
+        <p>Visual Studio solution included: <code>PhotoBatchStudio.sln</code>.</p>
       </article>
     </section>
 
-    <div class="note">
-      Для корректного рендера <code>CR2 + XMP -> JPG</code> на компьютере должен быть установлен Adobe Photoshop с Camera Raw.
+    <div class="release">
+      <strong>Requirements</strong>
+      Adobe Photoshop with Camera Raw must be installed on the Windows machine for <code>CR2 + XMP -&gt; JPG</code> rendering.
     </div>
   </div>
 </body>
