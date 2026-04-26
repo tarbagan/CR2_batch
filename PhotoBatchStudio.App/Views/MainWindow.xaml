@@ -1,0 +1,201 @@
+<Window x:Class="PhotoBatchStudio.App.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="Photo Batch Studio"
+        Width="1180"
+        Height="760"
+        MinWidth="1000"
+        MinHeight="680"
+        Background="#F4F1EA">
+    <Grid Margin="18">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="220" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0"
+                Padding="20"
+                Margin="0,0,0,16"
+                CornerRadius="18"
+                Background="#1F3A5F">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel>
+                    <TextBlock Text="Photo Batch Studio"
+                               FontSize="28"
+                               FontWeight="SemiBold"
+                               Foreground="White" />
+                    <TextBlock Margin="0,8,0,0"
+                               Text="Windows desktop foundation for CR2 sidecar XMP, batch export, metadata and future AI deblur."
+                               Foreground="#DDE7F3"
+                               TextWrapping="Wrap" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Bottom">
+                    <Button Content="Add Files"
+                            Padding="16,8"
+                            Margin="0,0,8,0"
+                            Command="{Binding AddFilesCommand}" />
+                    <Button Content="Add Folder"
+                            Padding="16,8"
+                            Margin="0,0,8,0"
+                            Command="{Binding AddFolderCommand}" />
+                    <Button Content="Start Batch"
+                            Padding="16,8"
+                            Command="{Binding StartProcessingCommand}" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1.4*" />
+                <ColumnDefinition Width="20" />
+                <ColumnDefinition Width="1*" />
+            </Grid.ColumnDefinitions>
+
+            <Border Padding="14"
+                    CornerRadius="16"
+                    Background="White">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Text="Batch Queue"
+                               FontSize="20"
+                               FontWeight="SemiBold"
+                               Foreground="#2C2C2C" />
+
+                    <DataGrid Grid.Row="1"
+                              Margin="0,12,0,12"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              IsReadOnly="True"
+                              ItemsSource="{Binding Files}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Name"
+                                                Width="220"
+                                                Binding="{Binding Name}" />
+                            <DataGridTextColumn Header="Folder"
+                                                Width="*"
+                                                Binding="{Binding DirectoryPath}" />
+                            <DataGridTextColumn Header="Type"
+                                                Width="90"
+                                                Binding="{Binding FileType}" />
+                            <DataGridTextColumn Header="Status"
+                                                Width="140"
+                                                Binding="{Binding Status}" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <TextBlock Grid.Row="2"
+                               Text="{Binding Summary}"
+                               Foreground="#6A6A6A" />
+                </Grid>
+            </Border>
+
+            <Border Grid.Column="2"
+                    Padding="14"
+                    CornerRadius="16"
+                    Background="#FCFBF8">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Text="Processing Settings"
+                                   FontSize="20"
+                                   FontWeight="SemiBold"
+                                   Foreground="#2C2C2C" />
+
+                        <TextBlock Margin="0,16,0,4" Text="XMP preset" />
+                        <DockPanel>
+                            <TextBox Text="{Binding XmpPresetPath, UpdateSourceTrigger=PropertyChanged}" />
+                            <Button Margin="8,0,0,0"
+                                    Padding="14,6"
+                                    Content="Browse"
+                                    Command="{Binding BrowsePresetCommand}" />
+                        </DockPanel>
+
+                        <TextBlock Margin="0,12,0,4" Text="Output folder" />
+                        <DockPanel>
+                            <TextBox Text="{Binding OutputFolder, UpdateSourceTrigger=PropertyChanged}" />
+                            <Button Margin="8,0,0,0"
+                                    Padding="14,6"
+                                    Content="Browse"
+                                    Command="{Binding BrowseOutputCommand}" />
+                        </DockPanel>
+
+                        <TextBlock Margin="0,12,0,4" Text="JPG description" />
+                        <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}" />
+
+                        <TextBlock Margin="0,12,0,4" Text="External AI command" />
+                        <TextBox Text="{Binding ExternalAiCommand, UpdateSourceTrigger=PropertyChanged}"
+                                 ToolTip="Example: realesrgan-ncnn-vulkan.exe -i {input} -o {output}" />
+
+                        <TextBlock Margin="0,12,0,4" Text="Blur threshold" />
+                        <TextBox Text="{Binding BlurThreshold, UpdateSourceTrigger=PropertyChanged}" />
+
+                        <TextBlock Margin="0,12,0,4" Text="JPEG quality" />
+                        <TextBox Text="{Binding JpegQuality, UpdateSourceTrigger=PropertyChanged}" />
+
+                        <CheckBox Margin="0,14,0,0"
+                                  Content="Scan folders recursively"
+                                  IsChecked="{Binding Recursive}" />
+                        <CheckBox Margin="0,8,0,0"
+                                  Content="Overwrite existing XMP sidecars"
+                                  IsChecked="{Binding OverwriteXmp}" />
+                        <CheckBox Margin="0,8,0,0"
+                                  Content="Detect blur automatically"
+                                  IsChecked="{Binding DetectBlur}" />
+                        <CheckBox Margin="0,8,0,0"
+                                  Content="Auto-fix blurry raster images"
+                                  IsChecked="{Binding AutoFixBlur}" />
+                        <CheckBox Margin="0,8,0,0"
+                                  Content="Render RAW to JPG via Adobe Photoshop"
+                                  IsChecked="{Binding RenderRawWithPhotoshop}" />
+                        <CheckBox Margin="0,8,0,0"
+                                  Content="Use external AI command"
+                                  IsChecked="{Binding UseExternalAi}" />
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+
+        <Border Grid.Row="2"
+                Margin="0,16,0,0"
+                Padding="14"
+                CornerRadius="16"
+                Background="#FFFFFF">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <TextBlock Text="Processing Log"
+                           FontSize="20"
+                           FontWeight="SemiBold"
+                           Foreground="#2C2C2C" />
+
+                <TextBox Grid.Row="1"
+                         Margin="0,12,0,0"
+                         IsReadOnly="True"
+                         TextWrapping="Wrap"
+                         AcceptsReturn="True"
+                         VerticalScrollBarVisibility="Auto"
+                         Text="{Binding LogText}" />
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

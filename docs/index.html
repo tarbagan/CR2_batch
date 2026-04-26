@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CR2 Batch</title>
+  <style>
+    :root {
+      --bg: #f3efe7;
+      --panel: #fffdf8;
+      --ink: #1d2a38;
+      --accent: #1f5d8e;
+      --accent-2: #d07a2d;
+      --line: #d8d1c6;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, #ffffff 0, #f7f2e9 30%, var(--bg) 100%);
+    }
+    .wrap {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 48px 20px 64px;
+    }
+    .hero {
+      background: linear-gradient(135deg, #1f3a5f, #2c6996);
+      color: white;
+      border-radius: 24px;
+      padding: 32px;
+      box-shadow: 0 20px 60px rgba(31, 58, 95, 0.18);
+    }
+    h1 {
+      margin: 0 0 12px;
+      font-size: 40px;
+      line-height: 1.1;
+    }
+    p {
+      line-height: 1.6;
+    }
+    .actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 24px;
+    }
+    .button {
+      display: inline-block;
+      text-decoration: none;
+      padding: 14px 18px;
+      border-radius: 12px;
+      font-weight: 600;
+    }
+    .button.primary {
+      background: white;
+      color: #17324f;
+    }
+    .button.secondary {
+      background: rgba(255,255,255,0.14);
+      color: white;
+      border: 1px solid rgba(255,255,255,0.24);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-top: 24px;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 20px;
+    }
+    .note {
+      margin-top: 24px;
+      padding: 18px 20px;
+      border-left: 4px solid var(--accent-2);
+      background: #fff8ef;
+      border-radius: 12px;
+    }
+    code {
+      background: #edf2f7;
+      padding: 2px 6px;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <h1>CR2 Batch</h1>
+      <p>Windows-приложение для пакетной обработки фотографий, применения Adobe XMP и экспорта RAW в JPG через Adobe Photoshop.</p>
+      <div class="actions">
+        <a class="button primary" href="./downloads/PhotoBatchStudio-win-x64.zip">Скачать Windows ZIP</a>
+        <a class="button secondary" href="https://github.com/tarbagan/CR2_batch">Открыть GitHub</a>
+      </div>
+    </section>
+
+    <section class="grid">
+      <article class="card">
+        <h2>Что умеет</h2>
+        <p>Пакетная очередь, выбор папок, применение XMP, экспорт JPG и подготовка к AI-обработке.</p>
+      </article>
+      <article class="card">
+        <h2>Adobe workflow</h2>
+        <p>Для совпадения с Photoshop используется открытие RAW через Adobe Photoshop + Camera Raw.</p>
+      </article>
+      <article class="card">
+        <h2>Visual Studio</h2>
+        <p>Исходники доступны в solution <code>PhotoBatchStudio.sln</code>.</p>
+      </article>
+    </section>
+
+    <div class="note">
+      Для корректного рендера <code>CR2 + XMP -> JPG</code> на компьютере должен быть установлен Adobe Photoshop с Camera Raw.
+    </div>
+  </div>
+</body>
+</html>

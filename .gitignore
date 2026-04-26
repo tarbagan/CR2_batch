@@ -1,0 +1,16 @@
+bin/
+obj/
+.vs/
+.idea/
+.vscode/
+.appdata/
+.dotnet-cli/
+.nuget/
+Out/
+test/
+app/__pycache__/
+app/photo_batch/__pycache__/
+*.user
+*.suo
+*.cache
+*.pdb
